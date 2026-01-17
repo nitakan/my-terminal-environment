@@ -1,8 +1,14 @@
-# My Zellij IDE Environment
+# My Terminal Environment
 
-Zellij + Yazi + Helix + GitUI を組み合わせたターミナルIDE環境。
+Zellij + Yazi + Helix + GitUI を統合したターミナルIDE環境と、再利用可能なzsh設定テンプレート。
 
 参考: [ターミナルだけで開発していく夢をZellijで叶える](https://zenn.dev/spacemarket/articles/192a58e9177961)
+
+## Features
+
+- **IDE環境**: Zellij レイアウトでエディタ・ファイラー・Git UIを統合
+- **zsh設定**: モジュール化された設定テンプレート
+- **バージョン管理**: mise による複数言語のランタイム管理
 
 ## Layout
 
@@ -24,6 +30,7 @@ Zellij + Yazi + Helix + GitUI を組み合わせたターミナルIDE環境。
 | [Yazi](https://yazi-rs.github.io/) | Terminal file manager |
 | [GitUI](https://github.com/extrawurst/gitui) | Git TUI |
 | [gwq](https://github.com/d-kuro/gwq) | Git worktree manager |
+| [mise](https://mise.jdx.dev/) | Runtime version manager |
 | [fzf](https://github.com/junegunn/fzf) | Fuzzy finder |
 | [fd](https://github.com/sharkdp/fd) | Fast file finder |
 | [ripgrep](https://github.com/BurntSushi/ripgrep) | Fast grep |
@@ -36,9 +43,22 @@ Zellij + Yazi + Helix + GitUI を組み合わせたターミナルIDE環境。
 ## Installation
 
 ```bash
-git clone <this-repo> ~/projects/my-env
-cd ~/projects/my-env
-./install.sh
+git clone <this-repo> ~/my-terminal-environment
+cd ~/my-terminal-environment
+
+# ヘルプ表示
+make
+
+# IDE + zsh設定をインストール
+make install
+
+# Homebrew依存パッケージ + miseランタイムも含める
+make install-all
+
+# 個別インストール
+make install-homebrew  # Homebrew + mise
+make install-ide       # IDE環境のみ
+make install-zsh       # zsh設定のみ
 ```
 
 ## Usage
@@ -52,6 +72,7 @@ zellij
 | Key | Action |
 |-----|--------|
 | `Ctrl+Shift+g` | Open gitui in floating pane |
+| `Ctrl+w` | Open worktree selector |
 | `Enter` (in yazi) | Open file in Editor |
 | `Alt+Enter` (in yazi) | Open file in new Helix buffer |
 
@@ -78,48 +99,74 @@ keybind = alt+left=unbind
 keybind = alt+right=unbind
 ```
 
-※ `alt+left`/`alt+right`のunbindはZellijのペイン移動キーバインド（`Alt+h/l`）との衝突を回避するため
-
 ### iTerm2
 
 Preferences → Profiles → Keys → Left Option Key → `Esc+`
 
-## Shell Configuration
+## Customization
 
-以下を `~/.zshrc` に追加してください：
+### 機密情報
 
-```bash
-# ~/.local/bin をPATHに追加（スクリプト用）
-export PATH="$HOME/.local/bin:$PATH"
+`~/.zsh/secrets` にAPIキー等を記載（`zsh/secrets.example` を参照）
 
-# Zellij alias
-alias z='zellij'
+### マシン固有設定
 
-# gwq (git worktree manager)
-eval "$(gwq completion zsh)"
-```
+`~/.zsh/local.zsh` にマシン固有の設定を記載
+
+### Gitアカウント切り替え
+
+`bin/git-switch` と `bin/github-switch` のTODOコメント箇所を編集
 
 ## Uninstall
 
 ```bash
-./uninstall.sh
+make uninstall
+
+# Homebrewパッケージも削除する場合
+brew uninstall zellij yazi helix gitui gh mise
 ```
 
 ## Files
 
 ```
-my-env/
-├── install.sh           # Installation script
-├── uninstall.sh         # Uninstallation script
+my-terminal-environment/
+├── Makefile              # インストール/アンインストール
+├── Brewfile              # Homebrew依存パッケージ
+├── mise.toml             # ランタイムバージョン定義
+├── install.sh            # インストールスクリプト（レガシー）
+├── uninstall.sh          # アンインストールスクリプト（レガシー）
+├── scripts/
+│   ├── common.sh         # 共通関数
+│   ├── install-homebrew.sh
+│   ├── install-ide.sh
+│   └── install-zsh.sh
 ├── config/
 │   ├── zellij/
-│   │   ├── config.kdl   # Zellij keybindings & settings
+│   │   ├── config.kdl    # Zellij設定
 │   │   └── layouts/
-│   │       └── ide.kdl  # IDE layout
+│   │       └── ide.kdl   # IDEレイアウト
 │   └── yazi-one/
-│       ├── keymap.toml  # Yazi keybindings
-│       └── yazi.toml    # Yazi opener settings
-└── bin/
-    ├── zellij-open      # Script to open files in Helix
-    └── yazi-one         # Wrapper to launch Yazi with custom config
+│       ├── keymap.toml   # Yaziキーバインド
+│       └── yazi.toml     # Yaziオープナー設定
+├── bin/
+│   ├── zellij-open       # Helix連携スクリプト
+│   ├── yazi-one          # Yaziラッパー
+│   ├── zellij-worktree   # Worktree選択
+│   ├── git-switch        # Gitアカウント切り替え
+│   └── github-switch     # GitHubアカウント切り替え
+└── zsh/
+    ├── main.zsh          # エントリーポイント
+    ├── zprofile          # ログインシェル設定
+    ├── modules/          # コアモジュール
+    │   ├── basic.zsh
+    │   ├── exports.zsh
+    │   ├── alias.zsh
+    │   ├── environment.zsh
+    │   ├── prompts.zsh
+    │   ├── git.zsh
+    │   ├── completions.zsh
+    │   └── optional/     # オプショナルモジュール
+    ├── git/              # Git補完スクリプト
+    ├── secrets.example   # 機密情報テンプレート
+    └── local.zsh.example # マシン固有設定テンプレート
 ```
