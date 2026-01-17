@@ -1,6 +1,6 @@
 alias gs='git-switch'
 alias ghs='github-switch'
-
+alias z='zellij'
 alias gp='git pull'
 alias gpush='git push'
 alias st='git status'
@@ -10,9 +10,6 @@ alias gpl='git pull --prune'
 alias gc='git commit'
 alias ga='git add --all'
 alias gdp='git checkout development && git pull --prune'
-
-# alias melos='fvm dart run melos'
 alias clauded='claude --dangerously-skip-permissions'
 alias cdroot='cd $(git rev-parse --show-toplevel)'
-
 alias claudepr='claude --allowed-tools "Read Bash(gh pr create:*) Bash(git push:*)" --model haiku -p "PRを作成して。タイトルや内容は変更内容から類推してください。コードの変更・コミットは許されません。作成後は、PRのURLを教えてください。"'
