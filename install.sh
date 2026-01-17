@@ -7,13 +7,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "==> Installing Zellij IDE Environment"
 
 # Install dependencies via Homebrew
+# Reference: https://zenn.dev/spacemarket/articles/192a58e9177961
 echo "==> Installing dependencies..."
 if ! command -v brew &> /dev/null; then
     echo "Error: Homebrew is not installed. Please install it first."
     exit 1
 fi
 
-brew install zellij yazi helix gitui
+brew install zellij helix yazi fzf fd ripgrep gitui
 
 # Create directories
 echo "==> Creating directories..."

@@ -2,6 +2,8 @@
 
 Zellij + Yazi + Helix + GitUI を組み合わせたターミナルIDE環境。
 
+参考: [ターミナルだけで開発していく夢をZellijで叶える](https://zenn.dev/spacemarket/articles/192a58e9177961)
+
 ## Layout
 
 ```
