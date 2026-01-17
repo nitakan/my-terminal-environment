@@ -1,0 +1,15 @@
+[[mgr.prepend_keymap]]
+on   = "<A-Enter>"
+run  = "shell 'zellij-open \"$@\" new' --block"
+desc = "Open in new Helix buffer"
+
+[[mgr.prepend_keymap]]
+on   = "N"
+run  = "shell 'zellij-open \"$@\" new' --block"
+desc = "Open in new Helix buffer (alternative)"
+
+# デバッグ用: Tを押すとテストメッセージ表示
+[[mgr.prepend_keymap]]
+on   = "T"
+run  = "shell 'echo test > /tmp/yazi-debug.txt' --block"
+desc = "Debug test"

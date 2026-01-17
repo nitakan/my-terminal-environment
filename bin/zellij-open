@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# 引数: $1 = ファイルパス, $2 = モード (optional: "new" で新しいバッファ)
+filepath=$(realpath "$1")
+mode="${2:-}"
+
+zellij action focus-next-pane
+zellij action write 27  # ESC
+
+if [ "$mode" = "new" ]; then
+    # 新しいバッファで開く
+    zellij action write-chars ":o $filepath"
+else
+    # 現在のバッファで開く
+    zellij action write-chars ":open $filepath"
+fi
+
+zellij action write 13  # Enter
+# zellij action move-focus "left"
+
+
