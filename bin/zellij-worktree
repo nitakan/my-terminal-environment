@@ -43,9 +43,13 @@ if [ "$selected" = "$CREATE_NEW" ]; then
 
     # 作成した worktree のパスを取得
     worktree_path=$(gwq get "$branch_name" 2>/dev/null || echo "")
+    # タブ名には新規作成したブランチ名（= worktree名）を使用
+    tab_name="$branch_name"
 else
     # 既存 worktree: パスを取得
     worktree_path=$(gwq get "$selected" 2>/dev/null || echo "")
+    # タブ名には選択したブランチ名（= worktree名）を使用
+    tab_name="$selected"
 fi
 
 # パスが取得できなかった場合
@@ -54,9 +58,6 @@ if [ -z "$worktree_path" ] || [ ! -d "$worktree_path" ]; then
     read -r -p "Press Enter to close..."
     exit 1
 fi
-
-# タブ名にブランチ名を使用
-tab_name=$(basename "$worktree_path")
 
 # 新しいタブを IDE レイアウトで開く
 zellij action new-tab --layout ide --cwd "$worktree_path" --name "$tab_name"
