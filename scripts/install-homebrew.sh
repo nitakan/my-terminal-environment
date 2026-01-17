@@ -23,6 +23,8 @@ fi
 
 # Install mise runtimes if mise.toml exists
 if [ -f "$REPO_ROOT/mise.toml" ] && command -v mise &> /dev/null; then
+    echo "==> Trusting mise.toml..."
+    mise trust "$REPO_ROOT"
     echo "==> Installing mise runtimes..."
     cd "$REPO_ROOT"
     mise install
