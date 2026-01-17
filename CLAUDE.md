@@ -12,26 +12,24 @@ Zellij + Yazi + Helix + GitUI を統合したターミナルIDE環境と、再�
 ## セットアップとテスト
 
 ```bash
-# すべてインストール（IDE + zsh）
-./install.sh
+# Makefileを使用（推奨）
+make install          # IDE + zsh
+make install-all      # Homebrew + IDE + zsh
+make install-homebrew # Homebrew依存 + miseランタイム
+make install-ide      # IDE環境のみ
+make install-zsh      # zsh設定のみ
+make uninstall        # IDE + zsh削除
+make help             # ヘルプ表示
 
-# オプション指定でインストール
-./install.sh --ide-only      # IDE環境のみ
-./install.sh --zsh-only      # zsh設定のみ
-./install.sh --with-homebrew # Brewfileから依存パッケージ + miseランタイムをインストール
-
-# 個別スクリプトを直接実行
+# シェルスクリプトを直接実行（レガシー）
+./install.sh                   # IDE + zsh
+./install.sh --with-homebrew   # Homebrew依存も含む
 ./scripts/install-homebrew.sh  # Homebrew + mise
 ./scripts/install-ide.sh       # IDE環境
 ./scripts/install-zsh.sh       # zsh設定
 
 # 動作確認
 zellij  # IDE layoutが自動起動
-
-# アンインストール
-./uninstall.sh
-./uninstall.sh --ide-only    # IDE環境のみ削除
-./uninstall.sh --zsh-only    # zsh設定のみ削除
 ```
 
 ## アーキテクチャ
