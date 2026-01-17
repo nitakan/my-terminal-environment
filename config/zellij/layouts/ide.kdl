@@ -9,7 +9,7 @@ layout {
         }
     }
 
-    tab name="editor" focus=true {
+    tab focus=true {
         pane split_direction="vertical" {
             pane size="10%" name="Explorer" {
                 command "yazi-one"
