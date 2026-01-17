@@ -52,6 +52,21 @@ zellij
 | `Ctrl+p` | Pane mode |
 | `Ctrl+t` | Tab mode |
 
+## Shell Configuration
+
+以下を `~/.zshrc` に追加してください：
+
+```bash
+# ~/.local/bin をPATHに追加（スクリプト用）
+export PATH="$HOME/.local/bin:$PATH"
+
+# Zellij alias
+alias z='zellij'
+
+# gwq (git worktree manager)
+eval "$(gwq completion zsh)"
+```
+
 ## Uninstall
 
 ```bash
