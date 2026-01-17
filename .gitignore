@@ -1,2 +1,8 @@
 firebase-debug.log
 .claude/settings.local.json
+
+# zsh secrets (contains API keys)
+zsh/secrets
+
+# zsh local machine-specific settings
+zsh/local.zsh

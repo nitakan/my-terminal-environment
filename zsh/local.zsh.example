@@ -1,0 +1,23 @@
+# local.zsh - Machine-specific settings
+#
+# This file is for machine-specific configurations that should not be shared across machines.
+# Copy this file to local.zsh and customize it for each machine.
+#
+# Examples:
+# - Machine-specific aliases
+# - Local development server URLs
+# - Custom PATH additions specific to this machine
+# - Environment variables for local tools
+
+# Example: Add machine-specific PATH
+# export PATH="$HOME/custom-tools:$PATH"
+
+# Example: Machine-specific aliases
+# alias work='cd ~/work/current-project'
+# alias dev='cd ~/development'
+
+# Example: Local development settings
+# export LOCAL_API_URL="http://localhost:3000"
+# export DEBUG_MODE=true
+
+# Add your machine-specific configurations below:
