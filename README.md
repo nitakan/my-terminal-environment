@@ -74,7 +74,11 @@ macOSではOptionキーをAltキーとして認識させる設定が必要です
 
 ```
 macos-option-as-alt = left
+keybind = alt+left=unbind
+keybind = alt+right=unbind
 ```
+
+※ `alt+left`/`alt+right`のunbindはZellijのペイン移動キーバインド（`Alt+h/l`）との衝突を回避するため
 
 ### iTerm2
 
