@@ -1,4 +1,2 @@
 # Deno completions
-fpath=(~/.zsh/completions $fpath)
-autoload -Uz compinit
-compinit
+# fpath は completions.zsh で設定済み

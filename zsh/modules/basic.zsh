@@ -4,5 +4,4 @@ setopt nolistbeep
 # 履歴ファイルを明示
 HISTFILE=~/.zsh_history
 
-# タブ補完などを有効にする
-autoload -Uz compinit && compinit
+# 補完は completions.zsh で一括初期化
