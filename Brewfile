@@ -11,7 +11,7 @@ brew "d-kuro/tap/gwq"
 brew "gh"
 
 # Development Environment
-brew "anyenv"
+brew "mise"
 
 # Optional: Development Tools (uncomment as needed)
 # brew "leoafarias/fvm/fvm"  # Flutter Version Management

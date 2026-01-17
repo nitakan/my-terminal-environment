@@ -98,7 +98,7 @@ install.shが以下を実行:
 - `modules/basic.zsh`: 基本設定（履歴、補完）
 - `modules/exports.zsh`: PATH設定、環境変数
 - `modules/alias.zsh`: エイリアス定義
-- `modules/environment.zsh`: anyenv, Homebrew初期化
+- `modules/environment.zsh`: mise, Homebrew初期化
 - `modules/prompts.zsh`: カスタムプロンプト（Git状態表示）
 - `modules/git.zsh`: Git関連設定（ssh-add）
 - `modules/completions.zsh`: 補完設定
@@ -148,7 +148,7 @@ install.shが以下を実行:
 - gwq (git worktree manager)
 - fzf, fd, ripgrep (検索ツール)
 - gh (GitHub CLI)
-- anyenv (複数言語のバージョン管理)
+- mise (複数言語のバージョン管理)
 
 **Brewfileで管理**: `./install.sh --with-homebrew` で一括インストール可能
 
