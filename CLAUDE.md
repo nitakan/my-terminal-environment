@@ -67,6 +67,30 @@ install.shが以下を実行:
 ### スクリプト編集 (`bin/`)
 - `zellij-open`: Helix連携の中核。Zellij action APIの仕様に依存
 - `yazi-one`: YAZI_CONFIG_HOME を設定して独立した設定を使用
+- `zellij-worktree`: Ctrl+w で worktree 選択・作成し、IDE レイアウトのタブで開く
+
+### **重要: 新規スクリプト追加時の必須作業**
+
+`bin/` に新しいスクリプトを追加した場合、**必ず以下の2ファイルを更新すること**：
+
+1. **`install.sh`** - 3箇所に追加:
+   ```bash
+   # 1. backup_if_exists の追加
+   backup_if_exists ~/.local/bin/新規スクリプト名
+
+   # 2. シンボリックリンク作成の追加
+   ln -s "$SCRIPT_DIR/bin/新規スクリプト名" ~/.local/bin/新規スクリプト名
+
+   # 3. chmod +x の引数に追加
+   chmod +x "$SCRIPT_DIR/bin/既存スクリプト" "$SCRIPT_DIR/bin/新規スクリプト名"
+   ```
+
+2. **`uninstall.sh`** - 削除処理を追加:
+   ```bash
+   remove_symlink ~/.local/bin/新規スクリプト名
+   ```
+
+これを忘れると、`install.sh` を実行してもスクリプトが `~/.local/bin/` にリンクされず、コマンドが使えない。
 
 ## 依存関係
 
