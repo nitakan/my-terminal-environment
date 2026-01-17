@@ -15,6 +15,19 @@ Zellij + Yazi + Helix + GitUI を組み合わせたターミナルIDE環境。
 └─────────┴──────────────────┴─────────────────────┘
 ```
 
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| [Zellij](https://zellij.dev/) | Terminal multiplexer |
+| [Helix](https://helix-editor.com/) | Modal text editor |
+| [Yazi](https://yazi-rs.github.io/) | Terminal file manager |
+| [GitUI](https://github.com/extrawurst/gitui) | Git TUI |
+| [gwq](https://github.com/d-kuro/gwq) | Git worktree manager |
+| [fzf](https://github.com/junegunn/fzf) | Fuzzy finder |
+| [fd](https://github.com/sharkdp/fd) | Fast file finder |
+| [ripgrep](https://github.com/BurntSushi/ripgrep) | Fast grep |
+
 ## Requirements
 
 - macOS
@@ -50,6 +63,22 @@ zellij
 | `Alt+↑/↓` | Switch between stacked panes |
 | `Ctrl+p` | Pane mode |
 | `Ctrl+t` | Tab mode |
+
+## Terminal Configuration
+
+macOSではOptionキーをAltキーとして認識させる設定が必要です。
+
+### Ghostty
+
+`~/.config/ghostty/config` または `~/Library/Application Support/com.mitchellh.ghostty/config`:
+
+```
+macos-option-as-alt = left
+```
+
+### iTerm2
+
+Preferences → Profiles → Keys → Left Option Key → `Esc+`
 
 ## Shell Configuration
 
