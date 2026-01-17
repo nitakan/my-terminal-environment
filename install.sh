@@ -15,6 +15,7 @@ if ! command -v brew &> /dev/null; then
 fi
 
 brew install zellij helix yazi fzf fd ripgrep gitui
+brew install d-kuro/tap/gwq
 
 # Create directories
 echo "==> Creating directories..."
