@@ -18,7 +18,12 @@ Zellij + Yazi + Helix + GitUI を統合したターミナルIDE環境と、再�
 # オプション指定でインストール
 ./install.sh --ide-only      # IDE環境のみ
 ./install.sh --zsh-only      # zsh設定のみ
-./install.sh --with-homebrew # Brewfileから依存パッケージをインストール
+./install.sh --with-homebrew # Brewfileから依存パッケージ + miseランタイムをインストール
+
+# 個別スクリプトを直接実行
+./scripts/install-homebrew.sh  # Homebrew + mise
+./scripts/install-ide.sh       # IDE環境
+./scripts/install-zsh.sh       # zsh設定
 
 # 動作確認
 zellij  # IDE layoutが自動起動
@@ -34,6 +39,11 @@ zellij  # IDE layoutが自動起動
 ### ディレクトリ構造
 - `config/`: 各ツールの設定ファイル（シンボリックリンク元）
 - `bin/`: ツール間連携スクリプト + Git関連ユーティリティ
+- `scripts/`: インストールスクリプト（分割）
+  - `common.sh`: 共通関数
+  - `install-homebrew.sh`: Homebrew依存 + miseランタイム
+  - `install-ide.sh`: IDE環境
+  - `install-zsh.sh`: zsh設定
 - `zsh/`: zsh設定テンプレート
   - `modules/`: コア設定ファイル
   - `modules/optional/`: オプショナル設定（Flutter, Bun, Deno, gcloud）
@@ -149,6 +159,8 @@ install.shが以下を実行:
 - fzf, fd, ripgrep (検索ツール)
 - gh (GitHub CLI)
 - mise (複数言語のバージョン管理)
+
+**mise.tomlで管理**: `mise install` でランタイムをインストール
 
 **Brewfileで管理**: `./install.sh --with-homebrew` で一括インストール可能
 
