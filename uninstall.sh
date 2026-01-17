@@ -19,6 +19,7 @@ remove_symlink ~/.config/yazi-one/keymap.toml
 remove_symlink ~/.config/yazi-one/yazi.toml
 remove_symlink ~/.local/bin/zellij-open
 remove_symlink ~/.local/bin/yazi-one
+remove_symlink ~/.local/bin/zellij-worktree
 
 echo ""
 echo "==> Symlinks removed."

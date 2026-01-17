@@ -166,6 +166,14 @@ keybinds clear-defaults=true {
                 height "80%"
             }
         }
+        bind "Ctrl w" {
+            Run "zellij-worktree" {
+                floating true
+                close_on_exit true
+                height "50%"
+                width "60%"
+            }
+        }
     }
     shared_except "locked" "move" {
         bind "Ctrl h" { SwitchToMode "move"; }

@@ -52,9 +52,11 @@ ln -s "$SCRIPT_DIR/config/yazi-one/yazi.toml" ~/.config/yazi-one/yazi.toml
 echo "==> Linking scripts..."
 backup_if_exists ~/.local/bin/zellij-open
 backup_if_exists ~/.local/bin/yazi-one
+backup_if_exists ~/.local/bin/zellij-worktree
 ln -s "$SCRIPT_DIR/bin/zellij-open" ~/.local/bin/zellij-open
 ln -s "$SCRIPT_DIR/bin/yazi-one" ~/.local/bin/yazi-one
-chmod +x "$SCRIPT_DIR/bin/zellij-open" "$SCRIPT_DIR/bin/yazi-one"
+ln -s "$SCRIPT_DIR/bin/zellij-worktree" ~/.local/bin/zellij-worktree
+chmod +x "$SCRIPT_DIR/bin/zellij-open" "$SCRIPT_DIR/bin/yazi-one" "$SCRIPT_DIR/bin/zellij-worktree"
 
 # Check if ~/.local/bin is in PATH
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
