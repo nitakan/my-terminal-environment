@@ -21,15 +21,17 @@ if [[ -n "$selected_account" ]]; then
     gh auth switch -u "$selected_account"
     echo "Switched GitHub CLI to: $selected_account"
 
-    # TODO: カスタマイズ - 必要に応じてgit configも更新
-    # case "$selected_account" in
-    #     "your-github-username")
-    #         git config --global user.name "Your Name"
-    #         git config --global user.email "your.email@example.com"
-    #         ;;
-    #     "another-username")
-    #         git config --global user.name "Another Name"
-    #         git config --global user.email "another@example.com"
-    #         ;;
-    # esac
+    # SSH鍵を切り替え
+    case "$selected_account" in
+        "nitakan")
+            cp ~/.ssh/id_rsa_nitakan ~/.ssh/id_rsa_current
+            cp ~/.ssh/id_rsa_nitakan.pub ~/.ssh/id_rsa_current.pub
+            echo "Switched SSH key to: nitakan"
+            ;;
+        "yzrh-mkato")
+            cp ~/.ssh/id_rsa_yzrh ~/.ssh/id_rsa_current
+            cp ~/.ssh/id_rsa_yzrh.pub ~/.ssh/id_rsa_current.pub
+            echo "Switched SSH key to: yzrh-mkato (yzrh)"
+            ;;
+    esac
 fi
