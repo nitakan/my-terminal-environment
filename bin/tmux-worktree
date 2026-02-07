@@ -1,0 +1,100 @@
+#!/bin/bash
+set -euo pipefail
+
+# 定数
+CREATE_NEW="+ 新規ブランチを作成"
+FROM_EXISTING="+ 既存ブランチから作成"
+
+# git リポジトリ内かチェック
+if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    echo "Error: Not in a git repository" >&2
+    exit 1
+fi
+
+# worktree 一覧を取得（gwq list --json → jq でパース）
+worktrees=$(gwq list --json 2>/dev/null | jq -r '.[].branch' || echo "")
+
+# fzf 用リストを作成（先頭に作成オプションを追加）
+fzf_list=$(printf "%s\n%s\n%s" "$CREATE_NEW" "$FROM_EXISTING" "$worktrees")
+
+# fzf で選択
+selected=$(echo "$fzf_list" | fzf --prompt="Worktree> " --height=100% --reverse || echo "")
+
+# キャンセル時は終了
+if [ -z "$selected" ]; then
+    exit 0
+fi
+
+if [ "$selected" = "$CREATE_NEW" ]; then
+    # 新規作成: ブランチ名を入力
+    echo -n "新規ブランチ名: "
+    read -r branch_name
+
+    if [ -z "$branch_name" ]; then
+        echo "キャンセルしました"
+        exit 0
+    fi
+
+    # gwq add -b で新規 worktree 作成
+    if ! gwq add -b "$branch_name"; then
+        echo "Error: Failed to create worktree" >&2
+        read -r -p "Press Enter to close..."
+        exit 1
+    fi
+
+    # 作成した worktree のパスを取得
+    worktree_path=$(gwq get "$branch_name" 2>/dev/null || echo "")
+    window_name="$branch_name"
+
+elif [ "$selected" = "$FROM_EXISTING" ]; then
+    # 既存ブランチから作成: ワークツリーになっていないブランチを一覧表示
+
+    # 既存ワークツリーのブランチ一覧（比較用）
+    worktree_branches=$(gwq list --json 2>/dev/null | jq -r '.[].branch' | sort || echo "")
+
+    # 全ローカルブランチ一覧
+    all_branches=$(git for-each-ref --format='%(refname:short)' refs/heads/ | sort)
+
+    # ワークツリーになっていないブランチを抽出
+    available_branches=$(comm -23 <(echo "$all_branches") <(echo "$worktree_branches"))
+
+    if [ -z "$available_branches" ]; then
+        echo "ワークツリー化できるブランチがありません"
+        read -r -p "Press Enter to close..."
+        exit 0
+    fi
+
+    # fzf でブランチを選択
+    branch_name=$(echo "$available_branches" | fzf --prompt="Branch> " --height=100% --reverse || echo "")
+
+    if [ -z "$branch_name" ]; then
+        echo "キャンセルしました"
+        exit 0
+    fi
+
+    # gwq add で既存ブランチから worktree 作成
+    if ! gwq add "$branch_name"; then
+        echo "Error: Failed to create worktree from branch '$branch_name'" >&2
+        read -r -p "Press Enter to close..."
+        exit 1
+    fi
+
+    # 作成した worktree のパスを取得
+    worktree_path=$(gwq get "$branch_name" 2>/dev/null || echo "")
+    window_name="$branch_name"
+
+else
+    # 既存 worktree: パスを取得
+    worktree_path=$(gwq get "$selected" 2>/dev/null || echo "")
+    window_name="$selected"
+fi
+
+# パスが取得できなかった場合
+if [ -z "$worktree_path" ] || [ ! -d "$worktree_path" ]; then
+    echo "Error: Worktree path not found" >&2
+    read -r -p "Press Enter to close..."
+    exit 1
+fi
+
+# 新しいウィンドウで worktree を開く
+tmux new-window -c "$worktree_path" -n "$window_name"

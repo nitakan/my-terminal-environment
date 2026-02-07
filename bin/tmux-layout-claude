@@ -1,0 +1,29 @@
+#!/bin/bash
+# Claude Code用レイアウト
+#
+# +---------------+---------------+
+# |               |    gitui      |
+# |  Claude Code  +---------------+
+# |               |  Claude Code  |
+# +---------------+---------------+
+
+set -euo pipefail
+
+# 環境変数
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS="0"
+
+# 左ペイン: Claude Code
+tmux send-keys "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0 claude" Enter
+
+# 右に分割
+tmux split-window -h
+
+# 右上: gitui
+tmux send-keys "gitui" Enter
+
+# 右下に分割: Claude Code
+tmux split-window -v
+tmux send-keys "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0 claude" Enter
+
+# 左ペインにフォーカス
+tmux select-pane -L

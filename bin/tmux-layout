@@ -1,0 +1,32 @@
+#!/bin/bash
+# tmuxレイアウト選択（fzf）
+
+set -euo pipefail
+
+# レイアウト一覧
+layouts=$(cat <<EOF
+claude: Claude Code用（左:Claude, 右上:gitui, 右下:Claude）
+EOF
+)
+
+# fzfで選択
+selected=$(echo "$layouts" | fzf --prompt="Layout> " --height=100% --reverse || echo "")
+
+# キャンセル時は終了
+if [ -z "$selected" ]; then
+    exit 0
+fi
+
+# 選択したレイアウト名を抽出
+layout_name=$(echo "$selected" | cut -d':' -f1)
+
+# レイアウトを適用
+case "$layout_name" in
+    claude)
+        tmux-layout-claude
+        ;;
+    *)
+        echo "Unknown layout: $layout_name"
+        exit 1
+        ;;
+esac
