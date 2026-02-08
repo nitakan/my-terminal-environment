@@ -36,14 +36,33 @@ if [[ -n "$selected_account" ]]; then
     esac
 
     # git author を切り替え
-    git_name=$(gh api /user --jq '.name // .login')
-    git_email=$(gh api user/emails --jq '[.[] | select(.primary)] | .[0].email')
-
-    if [[ -n "$git_name" && -n "$git_email" ]]; then
-        git config --global user.name "$git_name"
-        git config --global user.email "$git_email"
-        echo "Switched git author to: $git_name <$git_email>"
+    user_json=$(gh api /user 2>/dev/null)
+    if [[ $? -ne 0 || -z "$user_json" ]]; then
+        echo "Warning: Could not retrieve user info from GitHub API"
     else
-        echo "Warning: Could not retrieve git author info from GitHub API"
+        git_name=$(echo "$user_json" | jq -r '.name // .login')
+
+        # メール取得: user/emails API → /user .email → noreply フォールバック
+        git_email=$(gh api user/emails --jq '[.[] | select(.primary)] | .[0].email' 2>/dev/null)
+
+        if [[ -z "$git_email" || "$git_email" == *"{"* ]]; then
+            # user/emails が失敗した場合、/user の .email を試す
+            git_email=$(echo "$user_json" | jq -r '.email // empty')
+        fi
+
+        if [[ -z "$git_email" || "$git_email" == *"{"* ]]; then
+            # それでも取得できない場合、noreply メールを生成
+            user_id=$(echo "$user_json" | jq -r '.id')
+            user_login=$(echo "$user_json" | jq -r '.login')
+            git_email="${user_id}+${user_login}@users.noreply.github.com"
+        fi
+
+        if [[ -n "$git_name" && -n "$git_email" ]]; then
+            git config --global user.name "$git_name"
+            git config --global user.email "$git_email"
+            echo "Switched git author to: $git_name <$git_email>"
+        else
+            echo "Warning: Could not determine git author info"
+        fi
     fi
 fi
