@@ -72,7 +72,6 @@ uninstall_ide() {
     remove_symlink ~/.local/bin/tmux-worktree
     remove_symlink ~/.local/bin/tmux-layout-claude
     remove_symlink ~/.local/bin/tmux-layout
-    remove_symlink ~/.local/bin/git-switch
     remove_symlink ~/.local/bin/github-switch
     remove_symlink ~/.tmux.conf
 

@@ -34,4 +34,16 @@ if [[ -n "$selected_account" ]]; then
             echo "Switched SSH key to: yzrh-mkato (yzrh)"
             ;;
     esac
+
+    # git author を切り替え
+    git_name=$(gh api /user --jq '.name // .login')
+    git_email=$(gh api user/emails --jq '[.[] | select(.primary)] | .[0].email')
+
+    if [[ -n "$git_name" && -n "$git_email" ]]; then
+        git config --global user.name "$git_name"
+        git config --global user.email "$git_email"
+        echo "Switched git author to: $git_name <$git_email>"
+    else
+        echo "Warning: Could not retrieve git author info from GitHub API"
+    fi
 fi
