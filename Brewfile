@@ -1,4 +1,5 @@
 # Terminal IDE Core Dependencies
+brew "tmux"
 brew "zellij"
 brew "helix"
 brew "yazi"
