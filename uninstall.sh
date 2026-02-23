@@ -66,14 +66,6 @@ uninstall_ide() {
     remove_symlink ~/.config/zellij/layouts/ide.kdl
     remove_symlink ~/.config/yazi-one/keymap.toml
     remove_symlink ~/.config/yazi-one/yazi.toml
-    remove_symlink ~/.local/bin/zellij-open
-    remove_symlink ~/.local/bin/yazi-one
-    remove_symlink ~/.local/bin/zellij-worktree
-    remove_symlink ~/.local/bin/tmux-worktree
-    remove_symlink ~/.local/bin/tmux-layout-claude
-    remove_symlink ~/.local/bin/tmux-layout
-    remove_symlink ~/.local/bin/github-switch
-    remove_symlink ~/.local/bin/aico
     remove_symlink ~/.tmux.conf
 
     echo "==> IDE environment uninstalled."

@@ -24,11 +24,6 @@ install-ide:
 # Install zsh configuration
 install-zsh:
 	@./scripts/install-zsh.sh
-	@if [[ ":$$PATH:" != *":$$HOME/.local/bin:"* ]]; then \
-		echo ""; \
-		echo "==> WARNING: ~/.local/bin is not in your PATH"; \
-		echo "zsh config will add it automatically after restart."; \
-	fi
 
 # Uninstall everything
 uninstall: uninstall-ide uninstall-zsh
@@ -45,11 +40,7 @@ uninstall-ide:
 	@[ -L ~/.config/zellij/layouts/ide.kdl ] && rm ~/.config/zellij/layouts/ide.kdl || true
 	@[ -L ~/.config/yazi-one/keymap.toml ] && rm ~/.config/yazi-one/keymap.toml || true
 	@[ -L ~/.config/yazi-one/yazi.toml ] && rm ~/.config/yazi-one/yazi.toml || true
-	@[ -L ~/.local/bin/zellij-open ] && rm ~/.local/bin/zellij-open || true
-	@[ -L ~/.local/bin/yazi-one ] && rm ~/.local/bin/yazi-one || true
-	@[ -L ~/.local/bin/zellij-worktree ] && rm ~/.local/bin/zellij-worktree || true
-	@[ -L ~/.local/bin/git-switch ] && rm ~/.local/bin/git-switch || true
-	@[ -L ~/.local/bin/github-switch ] && rm ~/.local/bin/github-switch || true
+	@[ -L ~/.tmux.conf ] && rm ~/.tmux.conf || true
 	@echo "==> IDE environment uninstalled."
 
 # Uninstall zsh configuration

@@ -13,7 +13,6 @@ echo "==> Installing IDE Environment (Zellij, Yazi, Helix)"
 echo "==> Creating IDE directories..."
 mkdir -p ~/.config/zellij/layouts
 mkdir -p ~/.config/yazi-one
-mkdir -p ~/.local/bin
 
 # Link Zellij config
 echo "==> Linking Zellij config..."
@@ -34,25 +33,8 @@ echo "==> Linking tmux config..."
 backup_if_exists ~/.tmux.conf
 ln -s "$REPO_ROOT/config/tmux/tmux.conf" ~/.tmux.conf
 
-# Link scripts
-echo "==> Linking IDE scripts..."
-backup_if_exists ~/.local/bin/zellij-open
-backup_if_exists ~/.local/bin/yazi-one
-backup_if_exists ~/.local/bin/zellij-worktree
-backup_if_exists ~/.local/bin/tmux-worktree
-backup_if_exists ~/.local/bin/tmux-layout-claude
-backup_if_exists ~/.local/bin/tmux-layout
-backup_if_exists ~/.local/bin/github-switch
-backup_if_exists ~/.local/bin/aico
-ln -s "$REPO_ROOT/bin/zellij-open" ~/.local/bin/zellij-open
-ln -s "$REPO_ROOT/bin/yazi-one" ~/.local/bin/yazi-one
-ln -s "$REPO_ROOT/bin/zellij-worktree" ~/.local/bin/zellij-worktree
-ln -s "$REPO_ROOT/bin/tmux-worktree" ~/.local/bin/tmux-worktree
-ln -s "$REPO_ROOT/bin/tmux-layout-claude" ~/.local/bin/tmux-layout-claude
-ln -s "$REPO_ROOT/bin/tmux-layout" ~/.local/bin/tmux-layout
-ln -s "$REPO_ROOT/bin/github-switch" ~/.local/bin/github-switch
-ln -s "$REPO_ROOT/bin/aico" ~/.local/bin/aico
-chmod +x "$REPO_ROOT/bin/zellij-open" "$REPO_ROOT/bin/yazi-one" "$REPO_ROOT/bin/zellij-worktree" "$REPO_ROOT/bin/tmux-worktree" "$REPO_ROOT/bin/tmux-layout-claude" "$REPO_ROOT/bin/tmux-layout" "$REPO_ROOT/bin/github-switch" "$REPO_ROOT/bin/aico"
+# Ensure bin/ scripts are executable
+chmod +x "$REPO_ROOT/bin/"*
 
 echo "==> IDE environment installation complete!"
 echo ""

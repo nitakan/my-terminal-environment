@@ -78,16 +78,5 @@ if [ "$INSTALL_ZSH" = true ]; then
     "$SCRIPT_DIR/scripts/install-zsh.sh"
 fi
 
-# Check if ~/.local/bin is in PATH
-if [ "$INSTALL_IDE" = true ] || [ "$INSTALL_ZSH" = true ]; then
-    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-        echo ""
-        echo "==> WARNING: ~/.local/bin is not in your PATH"
-        echo "If you installed zsh config, it will be added automatically."
-        echo "Otherwise, add the following to your shell config:"
-        echo '  export PATH="$HOME/.local/bin:$PATH"'
-    fi
-fi
-
 echo ""
 echo "==> Installation complete!"

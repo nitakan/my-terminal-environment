@@ -56,7 +56,6 @@ install.shが以下を実行:
 **IDE環境 (`--ide-only` または `--all`)**:
 1. `~/.config/zellij/` ← `config/zellij/`
 2. `~/.config/yazi-one/` ← `config/yazi-one/`
-3. `~/.local/bin/` ← `bin/` (zellij-open, yazi-one, zellij-worktree, git-switch, github-switch)
 
 **zsh設定 (`--zsh-only` または `--all`)**:
 1. `~/.zshrc` (実ファイル) - `zsh/main.zsh` を呼び出す
@@ -123,28 +122,10 @@ install.shが以下を実行:
 - `zsh/local.zsh.example` はテンプレート（Git管理）。`local.zsh` はinstall.sh実行時に自動生成（Git管理外）
 - `.gitignore` で `zsh/secrets` と `zsh/local.zsh` を除外済み
 
-### **重要: 新規スクリプト追加時の必須作業**
+### bin/ スクリプトのPATH管理
 
-`bin/` に新しいスクリプトを追加した場合、**必ず以下の2ファイルを更新すること**：
-
-1. **`install.sh`** - 3箇所に追加:
-   ```bash
-   # 1. backup_if_exists の追加
-   backup_if_exists ~/.local/bin/新規スクリプト名
-
-   # 2. シンボリックリンク作成の追加
-   ln -s "$SCRIPT_DIR/bin/新規スクリプト名" ~/.local/bin/新規スクリプト名
-
-   # 3. chmod +x の引数に追加
-   chmod +x "$SCRIPT_DIR/bin/既存スクリプト" "$SCRIPT_DIR/bin/新規スクリプト名"
-   ```
-
-2. **`uninstall.sh`** - 削除処理を追加:
-   ```bash
-   remove_symlink ~/.local/bin/新規スクリプト名
-   ```
-
-これを忘れると、`install.sh` を実行してもスクリプトが `~/.local/bin/` にリンクされず、コマンドが使えない。
+`bin/` ディレクトリはリポジトリから直接PATHに追加される（`~/.zsh` symlinkからリポジトリルートを逆算）。
+新しいスクリプトを `bin/` に追加するだけで自動的に使えるようになる。個別のsymlink登録は不要。
 
 ## 依存関係
 

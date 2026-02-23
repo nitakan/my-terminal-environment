@@ -8,5 +8,7 @@ export PATH="$PATH:$HOME/Library/Android/sdk/platform-tools"
 # Bun
 export PATH="$PATH:$HOME/.bun/bin"
 
-# ~/.local/bin をPATHに追加（スクリプト用）
-export PATH="$HOME/.local/bin:$PATH"
+# リポジトリの bin/ を PATH に追加（~/.zsh symlink からリポジトリルートを解決）
+if [ -L "$HOME/.zsh" ]; then
+    export PATH="$(dirname "$(readlink "$HOME/.zsh")")/bin:$PATH"
+fi
