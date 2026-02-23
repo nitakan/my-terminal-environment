@@ -5,6 +5,27 @@ set -euo pipefail
 #   -b: PR先のブランチ（省略時: リポジトリのデフォルトブランチ）
 #   残りの引数: Claude への追加指示
 
+# スピナー表示
+SPIN_PID=""
+show_spinner() {
+    local msg="$1"
+    local chars='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    local i=0
+    while true; do
+        printf "\r  %s %s" "${chars:i%${#chars}:1}" "$msg" >&2
+        i=$((i + 1))
+        sleep 0.1
+    done
+}
+cleanup_spinner() {
+    if [ -n "$SPIN_PID" ]; then
+        kill "$SPIN_PID" 2>/dev/null || true
+        wait "$SPIN_PID" 2>/dev/null || true
+        printf '\r\033[K' >&2
+        SPIN_PID=""
+    fi
+}
+
 base_branch=""
 
 while getopts "b:" opt; do
@@ -16,6 +37,10 @@ done
 shift $((OPTIND - 1))
 
 # デフォルトブランチの解決
+show_spinner "PR作成を準備中..." &
+SPIN_PID=$!
+trap 'cleanup_spinner' EXIT
+
 if [ -z "$base_branch" ]; then
     base_branch=$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name')
 fi
@@ -28,6 +53,9 @@ if [ $# -gt 0 ]; then
 else
     prompt="$base_prompt"
 fi
+
+cleanup_spinner
+trap - EXIT
 
 claude \
     --allowed-tools "Read Bash(gh pr create:*) Bash(git push:*) Bash(git diff:*) Bash(git log:*)" \

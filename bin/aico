@@ -1,6 +1,27 @@
 #!/bin/bash
 set -euo pipefail
 
+# スピナー表示
+SPIN_PID=""
+show_spinner() {
+    local msg="$1"
+    local chars='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    local i=0
+    while true; do
+        printf "\r  %s %s" "${chars:i%${#chars}:1}" "$msg" >&2
+        i=$((i + 1))
+        sleep 0.1
+    done
+}
+cleanup_spinner() {
+    if [ -n "$SPIN_PID" ]; then
+        kill "$SPIN_PID" 2>/dev/null || true
+        wait "$SPIN_PID" 2>/dev/null || true
+        printf '\r\033[K' >&2
+        SPIN_PID=""
+    fi
+}
+
 # ステージ済み変更の確認
 if git diff --cached --quiet; then
     echo "No staged changes" >&2
@@ -25,6 +46,10 @@ EXCLUDES=(
 
 # --stat（全体概要）+ 除外付きdiff（コード変更の詳細）をClaudeに渡す
 # --disallowed-tools でファイル変更系ツールを明示的にブロック
+show_spinner "コミットメッセージを生成中..." &
+SPIN_PID=$!
+trap 'cleanup_spinner' EXIT
+
 msg=$({
     echo "=== Changed files overview ==="
     git diff --cached --stat
@@ -32,6 +57,9 @@ msg=$({
     echo "=== Detailed changes ==="
     git diff --cached -- . "${EXCLUDES[@]}"
 } | claude --disallowed-tools "Edit Write Bash NotebookEdit" --model haiku -p "$prompt" | grep -Fv '```' | sed '/^$/d' | head -1)
+
+cleanup_spinner
+trap - EXIT
 
 if [ -z "$msg" ]; then
     echo "Error: Failed to generate commit message" >&2
