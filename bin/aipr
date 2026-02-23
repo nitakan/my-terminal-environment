@@ -1,0 +1,35 @@
+#!/bin/bash
+set -euo pipefail
+
+# Usage: aipr [-b base_branch] [追加指示...]
+#   -b: PR先のブランチ（省略時: リポジトリのデフォルトブランチ）
+#   残りの引数: Claude への追加指示
+
+base_branch=""
+
+while getopts "b:" opt; do
+    case $opt in
+        b) base_branch="$OPTARG" ;;
+        *) echo "Usage: aipr [-b base_branch] [追加指示...]" >&2; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+# デフォルトブランチの解決
+if [ -z "$base_branch" ]; then
+    base_branch=$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name')
+fi
+
+# プロンプト構築
+base_prompt="現在のブランチから${base_branch}に対するPRを作成して。pushをし、gh pr createコマンドで作成してください。エラーにならない限りDraftで作成してください。タイトルや内容は変更内容から類推してください。コードの変更・コミットは許されません。作成後は、PRのURLを教えてください。リポジトリにテンプレートがある場合は必ずそれを利用すること。日本語で記述すること。"
+
+if [ $# -gt 0 ]; then
+    prompt="${base_prompt} 追加指示: $*"
+else
+    prompt="$base_prompt"
+fi
+
+claude \
+    --allowed-tools "Read Bash(gh pr create:*) Bash(git push:*) Bash(git diff:*) Bash(git log:*)" \
+    --model haiku \
+    -p "$prompt"
