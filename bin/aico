@@ -1,0 +1,41 @@
+#!/bin/bash
+set -euo pipefail
+
+# ステージ済み変更の確認
+if git diff --cached --quiet; then
+    echo "No staged changes" >&2
+    exit 1
+fi
+
+# プロンプト構築
+base_prompt="Generate 1 conventional commit message in Japanese for these git changes. *No change files*. Output only the commit message, no explanations:"
+
+if [ $# -gt 0 ]; then
+    prompt="${base_prompt} $*"
+else
+    prompt="$base_prompt"
+fi
+
+# 除外するファイルパターン（バイナリ/SVG/ロックファイル等）
+EXCLUDES=(
+    ':!*.svg' ':!*.png' ':!*.jpg' ':!*.jpeg' ':!*.gif' ':!*.ico' ':!*.webp' ':!*.bmp'
+    ':!*.lock' ':!package-lock.json' ':!pnpm-lock.yaml' ':!yarn.lock'
+    ':!*.min.js' ':!*.min.css' ':!*.map'
+)
+
+# --stat（全体概要）+ 除外付きdiff（コード変更の詳細）をClaudeに渡す
+# --disallowed-tools でファイル変更系ツールを明示的にブロック
+msg=$({
+    echo "=== Changed files overview ==="
+    git diff --cached --stat
+    echo ""
+    echo "=== Detailed changes ==="
+    git diff --cached -- . "${EXCLUDES[@]}"
+} | claude --disallowed-tools "Edit Write Bash NotebookEdit" --model haiku -p "$prompt" | grep -Fv '```' | sed '/^$/d' | head -1)
+
+if [ -z "$msg" ]; then
+    echo "Error: Failed to generate commit message" >&2
+    exit 1
+fi
+
+git commit -e -m "$msg"

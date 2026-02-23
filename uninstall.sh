@@ -73,6 +73,7 @@ uninstall_ide() {
     remove_symlink ~/.local/bin/tmux-layout-claude
     remove_symlink ~/.local/bin/tmux-layout
     remove_symlink ~/.local/bin/github-switch
+    remove_symlink ~/.local/bin/aico
     remove_symlink ~/.tmux.conf
 
     echo "==> IDE environment uninstalled."
