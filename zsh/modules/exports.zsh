@@ -12,3 +12,7 @@ export PATH="$PATH:$HOME/.bun/bin"
 if [ -L "$HOME/.zsh" ]; then
     export PATH="$(dirname "$(readlink "$HOME/.zsh")")/bin:$PATH"
 fi
+
+# Claude Code
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS="true"
+

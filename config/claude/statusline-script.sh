@@ -60,11 +60,19 @@ fi
 
 # 5-hour session usage from OAuth API
 usage_info=""
-credentials=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
-if [ -z "$credentials" ]; then
+raw_credentials=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
+if [ -z "$raw_credentials" ]; then
     usage_info=" | ⚠️ Auth:NoCredentials"
 else
-    access_token=$(echo "$credentials" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
+    # Try parsing as JSON directly first; if that fails, decode as hex
+    # (macOS may return hex-encoded data from security -w when data contains binary bytes)
+    access_token=$(echo "$raw_credentials" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
+    if [ -z "$access_token" ]; then
+        # Hex-encoded: decode, strip control chars, extract claudeAiOauth section
+        decoded=$(echo "$raw_credentials" | xxd -r -p 2>/dev/null | tr -d '\000-\037')
+        oauth_json=$(echo "$decoded" | sed 's/.*"claudeAiOauth"://' | sed 's/,"mcpOAuth".*//')
+        access_token=$(echo "$oauth_json" | jq -r '.accessToken // empty' 2>/dev/null)
+    fi
     if [ -z "$access_token" ]; then
         usage_info=" | ⚠️ Auth:NoToken"
     else
