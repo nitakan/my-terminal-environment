@@ -58,6 +58,7 @@ cleanup_spinner
 trap - EXIT
 
 claude \
+    --no-session-persistence \
     --allowed-tools "Read Bash(gh pr create:*) Bash(git push:*) Bash(git diff:*) Bash(git log:*)" \
     --model haiku \
     -p "$prompt"
