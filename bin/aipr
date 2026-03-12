@@ -45,8 +45,26 @@ if [ -z "$base_branch" ]; then
     base_branch=$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name')
 fi
 
+# PRテンプレートの検出
+pr_template=""
+for tmpl in .github/pull_request_template.md .github/PULL_REQUEST_TEMPLATE.md docs/pull_request_template.md; do
+    if [ -f "$tmpl" ]; then
+        pr_template=$(cat "$tmpl")
+        break
+    fi
+done
+
 # プロンプト構築
-base_prompt="現在のブランチから${base_branch}に対するPRを作成して。pushをし、gh pr createコマンドで作成してください。エラーにならない限りDraftで作成してください。タイトルや内容は変更内容から類推してください。コードの変更・コミットは許されません。作成後は、PRのURLを教えてください。リポジトリにテンプレートがある場合は必ずそれを利用すること。日本語で記述すること。"
+template_instruction=""
+if [ -n "$pr_template" ]; then
+    template_instruction="リポジトリのPRテンプレートに従って本文を記述すること。テンプレート内容: ${pr_template}"
+fi
+
+base_prompt="現在のブランチから${base_branch}に対するPRのタイトルと本文を生成して。以下のフォーマットで出力すること。コードブロックや説明文は不要。日本語で記述すること。${template_instruction}
+---フォーマット---
+1行目: PRタイトル（短く簡潔に）
+2行目: 空行
+3行目以降: PR本文（Markdown形式）"
 
 if [ $# -gt 0 ]; then
     prompt="${base_prompt} 追加指示: $*"
@@ -54,11 +72,72 @@ else
     prompt="$base_prompt"
 fi
 
-cleanup_spinner
-trap - EXIT
+# Claude でタイトル・本文を生成
+show_spinner "PRの内容を生成中..." &
+SPIN_PID=$!
+
+pr_content=$(claude \
+    --allowed-tools "Read Bash(git diff:*) Bash(git log:*)" \
+    --model haiku \
+    -p "$prompt")
 
 claude \
     --no-session-persistence \
     --allowed-tools "Read Bash(gh pr create:*) Bash(git push:*) Bash(git diff:*) Bash(git log:*)" \
     --model haiku \
     -p "$prompt"
+
+cleanup_spinner
+trap - EXIT
+
+if [ -z "$pr_content" ]; then
+    echo "Error: PRの内容を生成できませんでした" >&2
+    exit 1
+fi
+
+# 一時ファイルに書き出してエディタで編集
+tmpfile=$(mktemp "${TMPDIR:-/tmp}/aipr.XXXXXX")
+trap 'rm -f "$tmpfile"' EXIT
+
+cat > "$tmpfile" <<EOF
+${pr_content}
+
+# -------------------------------------------------------
+# 1行目: PRタイトル
+# 3行目以降: PR本文（Markdown）
+# '#' で始まる行は無視されます
+# 空にして保存するとPR作成をキャンセルします
+# -------------------------------------------------------
+EOF
+
+"${EDITOR:-vi}" "$tmpfile"
+
+# コメント行を除去してパース
+pr_edited=$(grep -v '^#' "$tmpfile" | sed -e :a -e '/^\n*$/{$d;N;ba;}')
+
+if [ -z "$pr_edited" ]; then
+    echo "PR作成をキャンセルしました" >&2
+    exit 0
+fi
+
+# 1行目をタイトル、3行目以降を本文として分離
+pr_title=$(echo "$pr_edited" | head -1)
+pr_body=$(echo "$pr_edited" | tail -n +3)
+
+if [ -z "$pr_title" ]; then
+    echo "Error: PRタイトルが空です" >&2
+    exit 1
+fi
+
+# リモートへpush
+current_branch=$(git branch --show-current)
+echo "Pushing ${current_branch} to remote..." >&2
+git push -u origin "$current_branch"
+
+# PR作成
+gh pr create \
+    --base "$base_branch" \
+    --title "$pr_title" \
+    --body "$pr_body" \
+    --draft
+

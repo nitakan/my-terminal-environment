@@ -1,6 +1,7 @@
 export PATH="/opt/homebrew/bin:$PATH"
 export PATH="$PATH:$HOME/tools"
 export PATH="/usr/local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # Android
 export PATH="$PATH:$HOME/Library/Android/sdk/platform-tools"
