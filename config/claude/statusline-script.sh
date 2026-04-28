@@ -84,15 +84,20 @@ get_color() {
 }
 
 format_time() {
-    local reset_at=$1
+    local reset_ts=$1
     local now=$(date +%s)
-    local clean_time=$(echo "$reset_at" | sed 's/\.[0-9]*+.*//; s/\.[0-9]*-.*//')
-    local reset_ts=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%S" "$clean_time" +%s 2>/dev/null || echo 0)
+    # reset_ts is Unix epoch seconds (integer)
+    reset_ts=$(printf "%.0f" "$reset_ts" 2>/dev/null || echo 0)
     if [ "$reset_ts" -gt 0 ] && [ "$reset_ts" -gt "$now" ]; then
         local diff=$((reset_ts - now))
-        local hours=$((diff / 3600))
+        local days=$((diff / 86400))
+        local hours=$(((diff % 86400) / 3600))
         local mins=$(((diff % 3600) / 60))
-        echo "${hours}h${mins}m"
+        if [ "$days" -gt 0 ]; then
+            echo "${days}d${hours}h"
+        else
+            echo "${hours}h${mins}m"
+        fi
     fi
 }
 
@@ -115,21 +120,30 @@ if [ -n "$five_hour_pct" ] && [ "$five_hour_pct" != "null" ]; then
 fi
 
 seven_day_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty' 2>/dev/null)
+seven_day_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty' 2>/dev/null)
 if [ -n "$seven_day_pct" ] && [ "$seven_day_pct" != "null" ]; then
     pct=$(printf "%.0f" "$seven_day_pct")
     color=$(get_color "$pct")
-    usage_parts+=("${color}7d:${pct}%")
+    time_left=""
+    if [ -n "$seven_day_reset" ]; then
+        time_left=$(format_time "$seven_day_reset")
+        if [ -n "$time_left" ]; then
+            time_left=" ($time_left)"
+        fi
+    fi
+    usage_parts+=("${color}7d:${pct}%${time_left}")
 fi
+
+# Output the status line (multi-line)
+echo "📁 $folder${lang_info} | 🌿 $branch | 🤖 $model${context_info}"
 
 if [ ${#usage_parts[@]} -gt 0 ]; then
-    usage_info=" | "
+    usage_line=""
     for i in "${!usage_parts[@]}"; do
         if [ $i -gt 0 ]; then
-            usage_info="${usage_info} "
+            usage_line="${usage_line} "
         fi
-        usage_info="${usage_info}${usage_parts[$i]}"
+        usage_line="${usage_line}${usage_parts[$i]}"
     done
+    echo "$usage_line"
 fi
-
-# Output the complete status line
-echo "📁 $folder${lang_info} | 🌿 $branch | 🤖 $model${context_info}${usage_info}"
