@@ -6,6 +6,7 @@ source ~/.zsh/modules/alias.zsh
 source ~/.zsh/modules/environment.zsh
 source ~/.zsh/modules/prompts.zsh
 source ~/.zsh/modules/git.zsh
+source ~/.zsh/modules/gh-account.zsh
 
 # Optional modules
 [[ -f ~/.zsh/modules/optional/flutter.zsh ]] && source ~/.zsh/modules/optional/flutter.zsh

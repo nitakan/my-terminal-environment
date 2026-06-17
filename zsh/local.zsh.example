@@ -21,3 +21,16 @@
 # export DEBUG_MODE=true
 
 # Add your machine-specific configurations below:
+
+# --- Repository-scoped GitHub account switching ---
+# Engine: ~/.zsh/modules/gh-account.zsh
+# Map a substring of the repo's origin URL (e.g. an org name) to a gh account
+# you've logged in via `gh auth login`. GH_TOKEN is then set automatically per
+# repository and per worktree, independently in each terminal.
+#
+# typeset -gA GH_ACCOUNT_RULES=(
+#   'my-work-org/' 'my-work-gh-username'
+#   'another-org/' 'my-work-gh-username'
+# )
+# GH_ACCOUNT_DEFAULT='my-personal-gh-username'
+# gh_account_sync   # initial sync for the current directory
