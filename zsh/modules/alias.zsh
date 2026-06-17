@@ -1,4 +1,3 @@
-alias ghs='github-switch'
 alias z='zellij'
 alias gp='git pull'
 alias gpush='git push'
