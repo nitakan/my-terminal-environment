@@ -8,15 +8,17 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Parse options
 INSTALL_IDE=false
 INSTALL_ZSH=false
+INSTALL_CLAUDE=false
 INSTALL_HOMEBREW=false
 
 show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --all           Install everything (IDE + zsh)"
-    echo "  --ide-only      Install only IDE environment (Zellij, Yazi, Helix)"
+    echo "  --all           Install everything (IDE + zsh + Claude)"
+    echo "  --ide-only      Install only terminal environment (tmux, Helix)"
     echo "  --zsh-only      Install only zsh configuration"
+    echo "  --claude-only   Install only Claude Code configuration"
     echo "  --with-homebrew Install Homebrew dependencies from Brewfile + mise runtimes"
     echo "  -h, --help      Show this help message"
     echo ""
@@ -26,24 +28,30 @@ show_usage() {
     echo "  ./scripts/install-homebrew.sh  # Homebrew + mise"
     echo "  ./scripts/install-ide.sh       # IDE environment"
     echo "  ./scripts/install-zsh.sh       # zsh configuration"
+    echo "  ./scripts/install-claude.sh    # Claude Code configuration"
 }
 
 # Parse arguments
 if [ $# -eq 0 ]; then
     INSTALL_IDE=true
     INSTALL_ZSH=true
+    INSTALL_CLAUDE=true
 else
     while [ $# -gt 0 ]; do
         case "$1" in
             --all)
                 INSTALL_IDE=true
                 INSTALL_ZSH=true
+                INSTALL_CLAUDE=true
                 ;;
             --ide-only)
                 INSTALL_IDE=true
                 ;;
             --zsh-only)
                 INSTALL_ZSH=true
+                ;;
+            --claude-only)
+                INSTALL_CLAUDE=true
                 ;;
             --with-homebrew)
                 INSTALL_HOMEBREW=true
@@ -76,6 +84,10 @@ fi
 
 if [ "$INSTALL_ZSH" = true ]; then
     "$SCRIPT_DIR/scripts/install-zsh.sh"
+fi
+
+if [ "$INSTALL_CLAUDE" = true ]; then
+    "$SCRIPT_DIR/scripts/install-claude.sh"
 fi
 
 echo ""

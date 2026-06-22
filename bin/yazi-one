@@ -1,4 +1,0 @@
-#!/bin/bash
-
-export YAZI_CONFIG_HOME="$HOME/.config/yazi-one"
-yazi "$@"

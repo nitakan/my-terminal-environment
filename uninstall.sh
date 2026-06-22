@@ -58,17 +58,13 @@ remove_symlink() {
     fi
 }
 
-# Uninstall IDE environment
+# Uninstall terminal environment
 uninstall_ide() {
-    echo "==> Uninstalling IDE Environment"
+    echo "==> Uninstalling Terminal Environment"
 
-    remove_symlink ~/.config/zellij/config.kdl
-    remove_symlink ~/.config/zellij/layouts/ide.kdl
-    remove_symlink ~/.config/yazi-one/keymap.toml
-    remove_symlink ~/.config/yazi-one/yazi.toml
     remove_symlink ~/.tmux.conf
 
-    echo "==> IDE environment uninstalled."
+    echo "==> Terminal environment uninstalled."
 }
 
 # Uninstall zsh configuration
@@ -96,4 +92,4 @@ echo ""
 echo "==> Uninstallation complete!"
 echo ""
 echo "Note: Homebrew packages were not uninstalled."
-echo "To uninstall them: brew uninstall zellij yazi helix gitui gh mise"
+echo "To uninstall them: brew uninstall tmux helix lazygit gwq fzf fd ripgrep gh mise"

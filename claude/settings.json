@@ -1,0 +1,111 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh api:*)",
+      "Bash(npm run :*)",
+      "Bash(make:*)",
+      "Bash(fvm:*)",
+      "mcp__mobile-mcp__*"
+    ],
+    "deny": [
+      "Bash(git config :*)",
+      "Bash(brew install :*)",
+      "Bash(chmod 777 :*)",
+      "Bash(rm -rf :*)",
+      "Bash(gh repo delete:*)",
+      "Bash(git rm:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/deny-check.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | jq -r '\"display notification \\\"\" + .message + \"\\\" with title \\\"\" + .title + \"\\\" sound name \\\"Glass\\\"\"' | xargs -I {} osascript -e '{}'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"作業が完了しました。\" with title \"Claude Code\" sound name \"Glass\"'"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/projects/personal/my-terminal-environment/config/claude/statusline-script.sh"
+  },
+  "enabledPlugins": {
+    "planner@inventy-marketplace": false,
+    "swift-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "firebase@firebase": true,
+    "linear@claude-plugins-official": true,
+    "figma@claude-plugins-official": true,
+    "flutter-to-figma@flutter-to-figma": true
+  },
+  "extraKnownMarketplaces": {
+    "flutter-to-figma": {
+      "source": {
+        "source": "github",
+        "repo": "shota-s9a/flutter-to-figma"
+      }
+    }
+  },
+  "language": "日本語",
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
+  "autoUpdatesChannel": "latest",
+  "skipDangerousModePermissionPrompt": true,
+  "preferredNotifChannel": "ghostty",
+  "teammateMode": "tmux",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
+}

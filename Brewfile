@@ -1,9 +1,6 @@
 # Terminal IDE Core Dependencies
 brew "tmux"
-brew "zellij"
 brew "helix"
-brew "yazi"
-brew "gitui"
 brew "lazygit"
 brew "fzf"
 brew "fd"
