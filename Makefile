@@ -1,15 +1,15 @@
-.PHONY: help install install-all install-homebrew install-ide install-zsh \
-        uninstall uninstall-ide uninstall-zsh
+.PHONY: help install install-all install-homebrew install-ide install-zsh install-claude \
+        uninstall uninstall-ide uninstall-zsh uninstall-claude
 
 # Default target
 .DEFAULT_GOAL := help
 
-install: install-ide install-zsh
+install: install-ide install-zsh install-claude
 	@echo ""
 	@echo "==> Installation complete!"
 
 # Install everything including Homebrew dependencies
-install-all: install-homebrew install-ide install-zsh
+install-all: install-homebrew install-ide install-zsh install-claude
 	@echo ""
 	@echo "==> Full installation complete!"
 
@@ -25,8 +25,12 @@ install-ide:
 install-zsh:
 	@./scripts/install-zsh.sh
 
+# Install Claude Code configuration
+install-claude:
+	@./scripts/install-claude.sh
+
 # Uninstall everything
-uninstall: uninstall-ide uninstall-zsh
+uninstall: uninstall-ide uninstall-zsh uninstall-claude
 	@echo ""
 	@echo "==> Uninstallation complete!"
 	@echo ""
@@ -52,21 +56,34 @@ uninstall-zsh:
 	@echo "NOTE: ~/.zshrc was NOT removed (may contain personal settings)"
 	@echo "NOTE: zsh/secrets in the repository was NOT removed (contains your API keys)"
 
+# Uninstall Claude Code configuration
+uninstall-claude:
+	@echo "==> Uninstalling Claude Code configuration"
+	@[ -L ~/.claude/CLAUDE.md ] && rm ~/.claude/CLAUDE.md || true
+	@[ -L ~/.claude/rules ] && rm ~/.claude/rules || true
+	@[ -L ~/.claude/settings.json ] && rm ~/.claude/settings.json || true
+	@[ -L ~/.claude/scripts ] && rm ~/.claude/scripts || true
+	@[ -L ~/.claude/skills ] && rm ~/.claude/skills || true
+	@echo "==> Claude Code configuration uninstalled."
+	@echo "NOTE: assets remain in the repository under claude/"
+
 # Show help
 help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Install targets:"
-	@echo "  install          Install IDE + zsh (default)"
-	@echo "  install-all      Install everything (Homebrew + IDE + zsh)"
+	@echo "  install          Install IDE + zsh + Claude (default)"
+	@echo "  install-all      Install everything (Homebrew + IDE + zsh + Claude)"
 	@echo "  install-homebrew Install Homebrew dependencies + mise runtimes"
 	@echo "  install-ide      Install IDE environment (Zellij, Yazi, Helix)"
 	@echo "  install-zsh      Install zsh configuration"
+	@echo "  install-claude   Install Claude Code configuration"
 	@echo ""
 	@echo "Uninstall targets:"
-	@echo "  uninstall        Uninstall IDE + zsh"
+	@echo "  uninstall        Uninstall IDE + zsh + Claude"
 	@echo "  uninstall-ide    Uninstall IDE environment"
 	@echo "  uninstall-zsh    Uninstall zsh configuration"
+	@echo "  uninstall-claude Uninstall Claude Code configuration"
 	@echo ""
 	@echo "Other:"
 	@echo "  help             Show this help message"

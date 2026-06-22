@@ -59,6 +59,7 @@ make install-all
 make install-homebrew  # Homebrew + mise
 make install-ide       # IDE環境のみ
 make install-zsh       # zsh設定のみ
+make install-claude    # Claude Code設定のみ
 ```
 
 ## Usage
@@ -139,7 +140,8 @@ my-terminal-environment/
 │   ├── common.sh         # 共通関数
 │   ├── install-homebrew.sh
 │   ├── install-ide.sh
-│   └── install-zsh.sh
+│   ├── install-zsh.sh
+│   └── install-claude.sh
 ├── config/
 │   ├── zellij/
 │   │   ├── config.kdl    # Zellij設定
@@ -154,6 +156,12 @@ my-terminal-environment/
 │   ├── zellij-worktree   # Worktree選択
 │   ├── git-switch        # Gitアカウント切り替え
 │   └── github-switch     # GitHubアカウント切り替え
+├── claude/               # Claude Code設定（~/.claude/ へリンク）
+│   ├── CLAUDE.md         # グローバル指示
+│   ├── rules/            # プロジェクトルール群
+│   ├── settings.json     # permissions/hooks/plugins設定
+│   ├── scripts/          # hookスクリプト
+│   └── skills/           # カスタムskill
 └── zsh/
     ├── main.zsh          # エントリーポイント
     ├── zprofile          # ログインシェル設定
