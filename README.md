@@ -1,39 +1,30 @@
 # My Terminal Environment
 
-Zellij + Yazi + Helix + GitUI を統合したターミナルIDE環境と、再利用可能なzsh設定テンプレート。
+tmux + Helix + lazygit を中心としたターミナル開発環境、再利用可能なzsh設定テンプレート、そして Claude Code 設定を統合したリポジトリ。シンボリックリンクで設定を管理する。
 
-参考: [ターミナルだけで開発していく夢をZellijで叶える](https://zenn.dev/spacemarket/articles/192a58e9177961)
+> 元は Zellij ベースのIDE環境（参考: [ターミナルだけで開発していく夢をZellijで叶える](https://zenn.dev/spacemarket/articles/192a58e9177961)）として出発したが、現在は tmux ベースに移行している。
 
 ## Features
 
-- **IDE環境**: Zellij レイアウトでエディタ・ファイラー・Git UIを統合
+- **ターミナル環境**: tmux を multiplexer に、Helix エディタと lazygit を連携
 - **zsh設定**: モジュール化された設定テンプレート
+- **Claude Code設定**: グローバル指示・ルール・skill・hook をシンボリックリンクで管理
 - **バージョン管理**: mise による複数言語のランタイム管理
-
-## Layout
-
-```
-┌─────────┬──────────────────┬─────────────────────┐
-│Explorer │ Editor (helix)   │ Git [collapsed]     │
-│ (yazi)  │                  ├─────────────────────┤
-│         ├──────────────────┤ Review [expanded]   │
-│         │ Implement        │                     │
-└─────────┴──────────────────┴─────────────────────┘
-```
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| [Zellij](https://zellij.dev/) | Terminal multiplexer |
+| [tmux](https://github.com/tmux/tmux) | Terminal multiplexer |
 | [Helix](https://helix-editor.com/) | Modal text editor |
-| [Yazi](https://yazi-rs.github.io/) | Terminal file manager |
-| [GitUI](https://github.com/extrawurst/gitui) | Git TUI |
+| [lazygit](https://github.com/jesseduffield/lazygit) | Git TUI |
 | [gwq](https://github.com/d-kuro/gwq) | Git worktree manager |
 | [mise](https://mise.jdx.dev/) | Runtime version manager |
 | [fzf](https://github.com/junegunn/fzf) | Fuzzy finder |
 | [fd](https://github.com/sharkdp/fd) | Fast file finder |
 | [ripgrep](https://github.com/BurntSushi/ripgrep) | Fast grep |
+| [gh](https://cli.github.com/) | GitHub CLI |
+| [Ghostty](https://ghostty.org/) | Terminal emulator |
 
 ## Requirements
 
@@ -49,7 +40,7 @@ cd ~/my-terminal-environment
 # ヘルプ表示
 make
 
-# IDE + zsh設定をインストール
+# ターミナル環境 + zsh + Claude設定をインストール
 make install
 
 # Homebrew依存パッケージ + miseランタイムも含める
@@ -57,7 +48,7 @@ make install-all
 
 # 個別インストール
 make install-homebrew  # Homebrew + mise
-make install-ide       # IDE環境のみ
+make install-ide       # ターミナル環境（tmux, Helix）
 make install-zsh       # zsh設定のみ
 make install-claude    # Claude Code設定のみ
 ```
@@ -65,26 +56,34 @@ make install-claude    # Claude Code設定のみ
 ## Usage
 
 ```bash
-zellij
+tmux
 ```
 
 ### Keybindings
 
-| Key | Action |
-|-----|--------|
-| `Ctrl+Shift+g` | Open gitui in floating pane |
-| `Ctrl+w` | Open worktree selector |
-| `Enter` (in yazi) | Open file in Editor |
-| `Alt+Enter` (in yazi) | Open file in new Helix buffer |
-
-### Pane Navigation
+tmux の prefix は `Ctrl+q`。
 
 | Key | Action |
 |-----|--------|
-| `Alt+h/j/k/l` | Move focus between panes |
-| `Alt+↑/↓` | Switch between stacked panes |
-| `Ctrl+p` | Pane mode |
-| `Ctrl+t` | Tab mode |
+| `Ctrl+q \` / `Ctrl+q -` | ペインを縦/横分割 |
+| `Ctrl+q g` | lazygit をポップアップで起動 |
+| `Ctrl+q e` | Helix (hx) をポップアップで起動 |
+| `Ctrl+q w` | worktree を選択/作成して新ウィンドウで開く（tmux-worktree） |
+| `Ctrl+q l` | レイアウト選択（tmux-layout） |
+| `Ctrl+q r` | 設定リロード |
+
+### Pane / Window Navigation
+
+prefix 不要で操作できるバインドも用意している。
+
+| Key | Action |
+|-----|--------|
+| `Alt+h/j/k/l` | ペイン間移動 |
+| `Alt+←/↓/↑/→` | ペイン間移動（矢印キー） |
+| `Alt+\` / `Alt+-` | ペインを縦/横分割 |
+| `Alt+z` | ペインのズーム切り替え |
+| `Alt+[` / `Alt+]` | ウィンドウ切り替え |
+| `Alt+f` | ポップアップでシェル(zsh)起動 |
 
 ## Terminal Configuration
 
@@ -112,11 +111,22 @@ Preferences → Profiles → Keys → Left Option Key → `Esc+`
 
 ### マシン固有設定
 
-`~/.zsh/local.zsh` にマシン固有の設定を記載
+`~/.zsh/local.zsh` にマシン固有の設定を記載（`zsh/local.zsh.example` から自動生成）
 
-### Gitアカウント切り替え
+### GitHubアカウント切り替え
 
-`bin/git-switch` と `bin/github-switch` のTODOコメント箇所を編集
+`zsh/modules/gh-account.zsh` がリポジトリの `origin` リモートからアカウントを判定して `GH_TOKEN` を自動切替する。マッピングは `~/.zsh/local.zsh` に定義する（`zsh/local.zsh.example` を参照）。現在のリポジトリで再判定したいときは `ghs` を実行する。
+
+## Helper Commands
+
+`bin/` 配下のスクリプトは zsh 設定経由で PATH に追加される。
+
+| Command | Description |
+|---------|-------------|
+| `aico` | AI によるコミットメッセージ生成 |
+| `aipr` | AI による PR 説明生成（`-b` でベースブランチ指定） |
+| `tmux-worktree` | worktree を選択/作成して tmux 新ウィンドウで開く |
+| `tmux-layout` | tmux レイアウトを選択して適用 |
 
 ## Uninstall
 
@@ -124,7 +134,7 @@ Preferences → Profiles → Keys → Left Option Key → `Esc+`
 make uninstall
 
 # Homebrewパッケージも削除する場合
-brew uninstall zellij yazi helix gitui gh mise
+brew uninstall tmux helix lazygit gwq fzf fd ripgrep gh mise
 ```
 
 ## Files
@@ -143,19 +153,16 @@ my-terminal-environment/
 │   ├── install-zsh.sh
 │   └── install-claude.sh
 ├── config/
-│   ├── zellij/
-│   │   ├── config.kdl    # Zellij設定
-│   │   └── layouts/
-│   │       └── ide.kdl   # IDEレイアウト
-│   └── yazi-one/
-│       ├── keymap.toml   # Yaziキーバインド
-│       └── yazi.toml     # Yaziオープナー設定
+│   ├── tmux/
+│   │   └── tmux.conf     # tmux設定
+│   └── claude/
+│       └── statusline-script.sh  # ステータスライン用スクリプト
 ├── bin/
-│   ├── zellij-open       # Helix連携スクリプト
-│   ├── yazi-one          # Yaziラッパー
-│   ├── zellij-worktree   # Worktree選択
-│   ├── git-switch        # Gitアカウント切り替え
-│   └── github-switch     # GitHubアカウント切り替え
+│   ├── aico              # AIコミットメッセージ生成
+│   ├── aipr              # AI PR説明生成
+│   ├── tmux-worktree     # worktree選択/作成
+│   ├── tmux-layout       # レイアウト選択
+│   └── tmux-layout-claude # Claude用レイアウト
 ├── claude/               # Claude Code設定（~/.claude/ へリンク）
 │   ├── CLAUDE.md         # グローバル指示
 │   ├── rules/            # プロジェクトルール群
@@ -172,9 +179,12 @@ my-terminal-environment/
     │   ├── environment.zsh
     │   ├── prompts.zsh
     │   ├── git.zsh
+    │   ├── gh-account.zsh
     │   ├── completions.zsh
     │   └── optional/     # オプショナルモジュール
     ├── git/              # Git補完スクリプト
     ├── secrets.example   # 機密情報テンプレート
     └── local.zsh.example # マシン固有設定テンプレート
 ```
+</content>
+</invoke>

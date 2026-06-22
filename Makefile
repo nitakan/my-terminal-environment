@@ -35,17 +35,13 @@ uninstall: uninstall-ide uninstall-zsh uninstall-claude
 	@echo "==> Uninstallation complete!"
 	@echo ""
 	@echo "Note: Homebrew packages were not uninstalled."
-	@echo "To uninstall them: brew uninstall zellij yazi helix gitui gh mise"
+	@echo "To uninstall them: brew uninstall tmux helix lazygit gwq fzf fd ripgrep gh mise"
 
-# Uninstall IDE environment
+# Uninstall terminal environment
 uninstall-ide:
-	@echo "==> Uninstalling IDE Environment"
-	@[ -L ~/.config/zellij/config.kdl ] && rm ~/.config/zellij/config.kdl || true
-	@[ -L ~/.config/zellij/layouts/ide.kdl ] && rm ~/.config/zellij/layouts/ide.kdl || true
-	@[ -L ~/.config/yazi-one/keymap.toml ] && rm ~/.config/yazi-one/keymap.toml || true
-	@[ -L ~/.config/yazi-one/yazi.toml ] && rm ~/.config/yazi-one/yazi.toml || true
+	@echo "==> Uninstalling Terminal Environment"
 	@[ -L ~/.tmux.conf ] && rm ~/.tmux.conf || true
-	@echo "==> IDE environment uninstalled."
+	@echo "==> Terminal environment uninstalled."
 
 # Uninstall zsh configuration
 uninstall-zsh:
@@ -75,13 +71,13 @@ help:
 	@echo "  install          Install IDE + zsh + Claude (default)"
 	@echo "  install-all      Install everything (Homebrew + IDE + zsh + Claude)"
 	@echo "  install-homebrew Install Homebrew dependencies + mise runtimes"
-	@echo "  install-ide      Install IDE environment (Zellij, Yazi, Helix)"
+	@echo "  install-ide      Install terminal environment (tmux, Helix)"
 	@echo "  install-zsh      Install zsh configuration"
 	@echo "  install-claude   Install Claude Code configuration"
 	@echo ""
 	@echo "Uninstall targets:"
 	@echo "  uninstall        Uninstall IDE + zsh + Claude"
-	@echo "  uninstall-ide    Uninstall IDE environment"
+	@echo "  uninstall-ide    Uninstall terminal environment"
 	@echo "  uninstall-zsh    Uninstall zsh configuration"
 	@echo "  uninstall-claude Uninstall Claude Code configuration"
 	@echo ""

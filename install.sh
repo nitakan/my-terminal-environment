@@ -16,7 +16,7 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  --all           Install everything (IDE + zsh + Claude)"
-    echo "  --ide-only      Install only IDE environment (Zellij, Yazi, Helix)"
+    echo "  --ide-only      Install only terminal environment (tmux, Helix)"
     echo "  --zsh-only      Install only zsh configuration"
     echo "  --claude-only   Install only Claude Code configuration"
     echo "  --with-homebrew Install Homebrew dependencies from Brewfile + mise runtimes"

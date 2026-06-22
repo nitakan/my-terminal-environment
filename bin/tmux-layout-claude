@@ -2,7 +2,7 @@
 # Claude Code用レイアウト
 #
 # +---------------+---------------+
-# |               |    gitui      |
+# |               |    lazygit    |
 # |  Claude Code  +---------------+
 # |               |  Claude Code  |
 # +---------------+---------------+
@@ -18,8 +18,8 @@ tmux send-keys "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0 claude" Enter
 # 右に分割
 tmux split-window -h
 
-# 右上: gitui
-tmux send-keys "gitui" Enter
+# 右上: lazygit
+tmux send-keys "lazygit" Enter
 
 # 右下に分割: Claude Code
 tmux split-window -v
