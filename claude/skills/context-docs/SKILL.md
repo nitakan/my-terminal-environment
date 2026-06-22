@@ -1,0 +1,97 @@
+---
+name: context-docs
+description: >
+  This skill should be used when the user wants to audit, tidy, consolidate, or
+  de-duplicate the documents that auto-load into context — グローバルの
+  `~/.claude/CLAUDE.md` / `~/.claude/rules/*.md` / memory や、プロジェクトの
+  `.claude/` 配下のドキュメント。発火する発話の例:「コンテキストに乗るドキュメントを
+  棚卸し/整備したい」「CLAUDE.md・rules・memory の重複をチェックして整理したい」
+  「設定が増えすぎたので片付けたい」「doc hygiene / context bloat を解消したい」。
+  さらに「rule / memory / CLAUDE.md 項目を新規追加する前に既存を確認したい」という
+  プリフライト用途でも使う。
+---
+
+# コンテキスト・ドキュメント整備（context-docs）
+
+## 目的（Why）
+
+セッション開始時に自動ロードされるドキュメント群（CLAUDE.md / rules / memory / プロジェクト context）は、放置すると**重複・肥大化・矛盾・陳腐化**する。本スキルはそれらを棚卸し・統合・圧縮し、コンテキスト予算を守る。あわせて「**新規追加の前に既存を疑う**」プリフライトも担う（既に複数箇所にある指示を新規追加する事故の再発防止が主眼）。
+
+上位方針はグローバル rule `~/.claude/rules/context-protection.md`（コンテキスト保護）に委ねる。本スキルはその実務手順であり、原則を重複記載しない。
+
+## 対象ドキュメント（コンテキストに乗るもの）
+
+**グローバル**
+- `~/.claude/CLAUDE.md`
+- `~/.claude/rules/*.md`
+- グローバル memory: `~/.claude/projects/<encoded-project-path>/memory/`（`MEMORY.md` インデックス + 個別メモリファイル）
+
+**プロジェクト（カレントリポジトリ）**
+- `./CLAUDE.md`
+- `./.claude/rules/*.md`
+- `./.claude/project-knowledge.md`（存在すれば）
+- その他 `./.claude/` 配下の context 用 md
+
+memory ディレクトリはカレントプロジェクトで変わる。ハードコードせず動的に特定する:
+
+```bash
+MEM="$HOME/.claude/projects/$(pwd | sed 's#/#-#g')/memory"
+ls "$MEM" 2>/dev/null || ls "$HOME/.claude/projects/"   # 失敗時は一覧から現プロジェクトのエンコード名を目視特定
+```
+
+(`/` を `-` に置換したパスがディレクトリ名。`.` 等のエンコード差異がありうるため、解決できなければ一覧から照合する。)
+
+## 編集適用ポリシー（最重要 — 格納先で変える）
+
+検出した整理を**自動適用してよいか**は、ファイルの格納先で決める。
+
+**Repository 内（git 管理下: `./CLAUDE.md`, `./.claude/**`）→ 自動適用可。**
+重複統合・削除・要約圧縮をそのまま適用し、**適用後に変更点を要約報告**する。理由: git 管理下で可逆（diff / revert 可）。適用前に `git status` がクリーン寄りであることを確認し、論理単位でのコミットを促す。
+
+**グローバル（`~/.claude/**`、memory 含む）→ 自動編集しない。**
+重複・肥大・矛盾・陳腐化を検出して**レポート**し、統合 / 削除 / 圧縮の**具体案**（どのファイルのどの行を、どう変えるか）を提示。**ユーザー承認後にのみ編集**する。理由: 全プロジェクトに波及し、リポジトリ git 管理外で復元が効きにくい。
+
+判定: `~/.claude/` 配下は**無条件でグローバル扱い**。それ以外でも git 追跡外なら手動承認側に倒す。迷ったら `git ls-files --error-unmatch <path>` で追跡有無を確認する。
+
+## 監査の観点
+
+- **重複**: 同一/類似の指示が複数の面（CLAUDE.md / rules / memory）に跨って存在しないか。
+- **肥大化**: 1 ファイルが長すぎる、CLAUDE.md に脈絡なく付け足された孤立行、項目数の膨張。
+- **矛盾**: 相反する指示の併存。
+- **陳腐化**: 既にコード / git / CLAUDE.md が記録している内容を memory が重複保持していないか。相対日付（「直近」「今」等）の放置。参照先のファイル / 関数 / フラグが**現存するか**を grep で実在確認。
+- **配置の妥当性**: 「**これがないと Claude がミスするか**」を満たさない項目は削除候補。住み分け = 単一トピック→独立 rule、横断方針→CLAUDE.md、文脈 recall→memory。
+- **memory インデックス整合**: `MEMORY.md` の各行と実ファイルの対応（孤児行=実体なし / 記載漏れ=index に無いファイル）。
+
+## 手順（監査・整理）
+
+1. 対象を列挙（上記パス）。memory ディレクトリを動的特定する。
+2. 各面の読み込み・所見収集は**サブエージェントに委任**し、メインに全文を持ち帰らない（重い通読・grep 展開はメインで広げない）。観点ごとに所見だけ回収する。
+3. 所見を「重複 / 肥大 / 矛盾 / 陳腐 / 誤配置 / index 不整合」に分類し、各々に**統合先・削除・圧縮の具体案**を付ける。
+4. 適用:
+   - **Repo 内** → 適用してから変更サマリを報告。
+   - **グローバル** → レポート + 具体案を提示し、**承認を待つ**。承認後にのみ編集。
+5. memory を編集した場合は `MEMORY.md` の該当行も同時更新する（1 メモリ 1 行、要約を実体に一致させる）。
+
+## プリフライト（新規 rule / memory / CLAUDE.md 項目を追加する前）
+
+1. 追加したい指示のキーワードで既存を横断検索する:
+   ```bash
+   grep -ri "<keyword>" ~/.claude/CLAUDE.md ~/.claude/rules "$MEM" ./CLAUDE.md ./.claude 2>/dev/null
+   ```
+2. ヒットしたら、**新規追加ではなく既存更新**を第一候補にする。既に複数箇所にある指示を重ねて足さない。
+3. 真に新規なら配置を決める（住み分け基準は上記）。「これがないと Claude がミスするか」を満たさなければ追加しない。
+
+## 規約（memory / index の形 — 既存ファイルの実形に必ず合わせる）
+
+個別 memory ファイルの frontmatter（実在の慣例）:
+- `name`, `description`, `type:`（`feedback` / `project` / `reference` / `user`）, `originSessionId`
+- 本文: `feedback` / `project` は **Why:** と **How to apply:** を含める
+- 関連 memory は `[[name]]` でリンク
+
+`MEMORY.md`（インデックス）: 1 メモリ 1 行 `- [file.md](file.md) - 簡潔な要約`。
+
+新規ファイルを作る前に、必ず既存ファイルの frontmatter を 1〜2 件読んで**そのままの形**に揃える（フィールド名や `type` の値を勝手に変えない）。
+
+## 自戒
+
+本スキル自身が肥大化・重複の悪例にならないこと。最小限で書き、原則は `context-protection.md` 等の既存方針に委ねて重複させない。

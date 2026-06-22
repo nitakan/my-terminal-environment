@@ -5,8 +5,8 @@ description: >
   "create a team for implementation", "execute implementation plan", "use the team
   workflow", "delegate to architect and members", "チームで実装して",
   "実装計画を実行", "アーキテクトとメンバーに委任", or when an implementation plan
-  specifies a team structure. Also applies to complex multi-file changes that benefit
-  from a design-review layer between planning and implementation.
+  specifies a team structure. Only invoke on explicit user request — do NOT
+  auto-trigger based on task complexity or the number of files changed.
 ---
 
 # Team Implementation Workflow
