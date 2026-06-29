@@ -107,5 +107,10 @@
   "teammateMode": "tmux",
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "tui": "fullscreen",
+  "attribution": {
+    "commits": false,
+    "pullRequests": false
+  }
 }
