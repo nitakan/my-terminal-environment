@@ -1,0 +1,363 @@
+#!/usr/bin/env bash
+#
+# cmapi — Codemagic REST API (read-only) CLI
+#
+# 参照系（GET）のみ。ビルドの起動・キャンセルは扱わない。
+# 認証は環境変数 CM_API_TOKEN（x-auth-token ヘッダーで送る）。トークン値は一切出力しない。
+#
+# 出力規約: データは stdout に JSON、メッセージ/エラーは stderr。
+#
+# 実装メモ（重要な罠）:
+#   v1 (api.codemagic.io) のレスポンスには未エスケープの制御文字が混ざることがあり、
+#   JSON をシェル変数に入れて `echo "$VAR" | jq` で再パースすると壊れる。
+#   よって本スクリプトは curl 出力を一時ファイルへ書き、`jq <file>` で読む（変数往復しない）。
+#
+set -euo pipefail
+
+V3="https://codemagic.io/api/v3"
+V1="https://api.codemagic.io"
+
+print_help() {
+  cat <<'EOF'
+cmapi — Codemagic REST API (read-only) CLI
+
+USAGE:
+  cmapi apps
+  cmapi workflows <app>
+  cmapi builds <app> [--workflow <name|id>] [--status <s>] [--limit <N=20>]
+  cmapi latest <app> [--workflow <name|id>] [--tag <t>]
+  cmapi build <build_id>
+  cmapi actions <build_id>
+  cmapi artifacts <build_id> [--type <t>] [--url]
+  cmapi wait <build_id> [--interval <30>] [--max <45>]
+  cmapi wait --app <app> [--workflow <name|id>] [--interval <30>] [--max <45>]
+  cmapi -h | --help
+
+NOTES:
+  <app>       アプリ名（大小文字無視で完全一致）または 24桁hex の app_id
+  <name|id>   ワークフロー名（大小文字無視）または 24桁hex の workflow_id
+  認証        環境変数 CM_API_TOKEN（x-auth-token）を使用
+  status 値   initializing,queued,preparing,fetching,testing,building,
+              publishing,finishing,finished,failed,canceled,timeout,skipped
+  終端 status finished,failed,canceled,timeout,skipped
+
+OUTPUT:
+  既定で JSON を stdout に出力。エラー/進捗は stderr。
+
+EXIT CODES (wait):
+  0 = finished, 1 = その他の終端(failed等), 2 = max 超過
+
+EOF
+}
+
+# ---- help は依存/トークン確認より前に処理（オフラインで使える） ----
+if [ $# -eq 0 ]; then print_help; exit 0; fi
+case "${1:-}" in
+  -h|--help|help) print_help; exit 0 ;;
+esac
+
+# ---- 依存チェック ----
+for dep in curl jq; do
+  command -v "$dep" >/dev/null 2>&1 || {
+    echo "依存コマンド '$dep' が見つかりません。インストールしてください。" >&2
+    exit 1
+  }
+done
+
+# ---- トークンチェック（値は出力しない） ----
+if [ -z "${CM_API_TOKEN:-}" ]; then
+  echo "CM_API_TOKEN 未設定。Codemagic > Personal Account > Integrations > Codemagic API で発行し環境変数 CM_API_TOKEN に設定" >&2
+  exit 1
+fi
+
+# ---- 一時ファイル領域（trap で必ず削除） ----
+TMPDIR_CM="$(mktemp -d "${TMPDIR:-/tmp}/cmapi.XXXXXX")"
+trap 'rm -rf "$TMPDIR_CM"' EXIT
+
+# ---- 共通 fetch ----
+# cm_api <url>: 認証付き GET。ボディを一時ファイルへ書き、そのパスを stdout に echo。
+# HTTP エラー時は stderr にメッセージを出し非ゼロ復帰。JSON は変数に入れない。
+cm_api() {
+  local url="$1" body hdr code
+  body="$(mktemp "$TMPDIR_CM/body.XXXXXX")"
+  hdr="$(mktemp "$TMPDIR_CM/hdr.XXXXXX")"
+  code="$(curl -sS -D "$hdr" -o "$body" -w '%{http_code}' \
+            -H "x-auth-token: $CM_API_TOKEN" "$url")" || {
+    echo "リクエスト失敗: $url" >&2
+    return 1
+  }
+  if [ "$code" = "429" ]; then
+    local reset
+    reset="$(grep -i '^ratelimit-reset:' "$hdr" | tr -d '\r' | awk '{print $2}' || true)"
+    echo "レート制限超過 (HTTP 429)。${reset:-?}秒後に再試行してください。" >&2
+    return 1
+  fi
+  if [ "$code" -ge 400 ]; then
+    local detail
+    detail="$(jq -r '.detail // empty' "$body" 2>/dev/null || true)"
+    echo "API エラー (HTTP $code): ${detail:-$url}" >&2
+    return 1
+  fi
+  printf '%s\n' "$body"
+}
+
+is_object_id() { [[ "$1" =~ ^[0-9a-fA-F]{24}$ ]]; }
+
+# v1 builds 1ページ取得（相対/絶対 URL いずれも受ける）。ボディパスを echo。
+v1_fetch() {
+  local url="$1"
+  case "$url" in http*) ;; *) url="$V1$url" ;; esac
+  cm_api "$url"
+}
+
+# ---- アプリ解決: 名前 or id -> app_id ----
+resolve_app() {
+  local q="$1"
+  if is_object_id "$q"; then printf '%s\n' "$q"; return 0; fi
+  local page=1 total=1 f acc="$TMPDIR_CM/apps_resolve.jsonl"
+  : > "$acc"
+  while :; do
+    f="$(cm_api "$V3/user/apps?page_size=100&page=$page")" || return 1
+    total="$(jq -r '.total_pages // 1' "$f")"
+    jq -c '.data[] | {id, name}' "$f" >> "$acc"
+    page=$((page + 1)); [ "$page" -gt "$total" ] && break
+  done
+  local match="$TMPDIR_CM/app_match.json" count
+  jq -s --arg n "$q" '[ .[] | select((.name|ascii_downcase) == ($n|ascii_downcase)) ]' "$acc" > "$match"
+  count="$(jq 'length' "$match")"
+  if [ "$count" -eq 0 ]; then
+    echo "アプリ '$q' が見つかりません。利用可能なアプリ:" >&2
+    jq -r '.name' "$acc" | sort -u >&2
+    return 1
+  elif [ "$count" -gt 1 ]; then
+    echo "アプリ名 '$q' が曖昧です。候補:" >&2
+    jq -r '.[].name' "$match" >&2
+    return 1
+  fi
+  jq -r '.[0].id' "$match"
+}
+
+# ---- ワークフロー解決: 名前 or id -> workflow_id（v1 の workflows 対応表を使用） ----
+resolve_workflow() {
+  local app="$1" q="$2"
+  if is_object_id "$q"; then printf '%s\n' "$q"; return 0; fi
+  local f; f="$(v1_fetch "/builds?appId=$app")" || return 1
+  local out="$TMPDIR_CM/wf_match.txt"
+  jq -r --arg n "$q" '
+    .applications[0].workflows // {}
+    | to_entries[]
+    | select((.value.name|ascii_downcase) == ($n|ascii_downcase))
+    | .key' "$f" > "$out"
+  if [ ! -s "$out" ]; then
+    echo "ワークフロー '$q' が見つかりません。利用可能なワークフロー:" >&2
+    jq -r '.applications[0].workflows // {} | to_entries[] | .value.name' "$f" >&2
+    return 1
+  fi
+  head -1 "$out"
+}
+
+# ---- v3 ビルド詳細の正規化（ファイル -> 正規化 JSON） ----
+normalize_detail() {
+  jq '.data | {
+    id, index, status, branch, tag,
+    workflow: (.workflow.name // null),
+    commit: (if .commit == null then null
+             else { hash: .commit.hash, author_name: .commit.author_name,
+                    message: .commit.message, url: .commit.url } end),
+    started_at, finished_at,
+    app_store_connect_status,
+    artifacts: [ .artifacts[]? | { name, type, size_in_bytes } ]
+  }' "$1"
+}
+
+# ============================ サブコマンド ============================
+
+cmd_apps() {
+  local page=1 total=1 f acc="$TMPDIR_CM/apps.jsonl"
+  : > "$acc"
+  while :; do
+    f="$(cm_api "$V3/user/apps?page_size=100&page=$page")" || return 1
+    total="$(jq -r '.total_pages // 1' "$f")"
+    jq -c '.data[] | {id, name, last_build_id}' "$f" >> "$acc"
+    page=$((page + 1)); [ "$page" -gt "$total" ] && break
+  done
+  jq -s '.' "$acc"
+}
+
+cmd_workflows() {
+  [ $# -ge 1 ] || { echo "usage: cmapi workflows <app>" >&2; return 1; }
+  local app; app="$(resolve_app "$1")" || return 1
+  local f; f="$(v1_fetch "/builds?appId=$app")" || return 1
+  jq '.applications[0].workflows // {} | to_entries | map({id: .key, name: .value.name})' "$f"
+}
+
+cmd_builds() {
+  [ $# -ge 1 ] || { echo "usage: cmapi builds <app> [--workflow <w>] [--status <s>] [--limit <N>]" >&2; return 1; }
+  local appq="$1"; shift
+  local wf="" status="" limit=20
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --workflow) wf="${2:?--workflow に値が必要}"; shift 2 ;;
+      --status)   status="${2:?--status に値が必要}"; shift 2 ;;
+      --limit)    limit="${2:?--limit に値が必要}"; shift 2 ;;
+      *) echo "不明な引数: $1" >&2; return 1 ;;
+    esac
+  done
+  local app; app="$(resolve_app "$appq")" || return 1
+  local wfid=""
+  [ -n "$wf" ] && { wfid="$(resolve_workflow "$app" "$wf")" || return 1; }
+
+  local acc="$TMPDIR_CM/builds.jsonl" wfmap="$TMPDIR_CM/wfmap.json"
+  : > "$acc"
+  local url="/builds?appId=$app" first=1 count=0 f
+  while [ -n "$url" ] && [ "$url" != "null" ]; do
+    f="$(v1_fetch "$url")" || return 1
+    if [ "$first" = 1 ]; then jq '.applications[0].workflows // {}' "$f" > "$wfmap"; first=0; fi
+    jq -c --arg wfid "$wfid" --arg st "$status" --slurpfile wm "$wfmap" '
+      .builds[]
+      | select($wfid == "" or .workflowId == $wfid)
+      | select($st == "" or .status == $st)
+      | { id: ._id, index, status, branch, tag,
+          workflow: ($wm[0][.workflowId].name // .workflowId),
+          created_at: .createdAt }
+    ' "$f" >> "$acc"
+    count="$(wc -l < "$acc" | tr -d ' ')"
+    [ "$count" -ge "$limit" ] && break
+    url="$(jq -r '.nextPageUrl // empty' "$f")"
+    [ -z "$url" ] && break
+  done
+  jq -s --argjson lim "$limit" '.[0:$lim]' "$acc"
+}
+
+cmd_latest() {
+  [ $# -ge 1 ] || { echo "usage: cmapi latest <app> [--workflow <w>] [--tag <t>]" >&2; return 1; }
+  local appq="$1"; shift
+  local wf="" tag=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --workflow) wf="${2:?--workflow に値が必要}"; shift 2 ;;
+      --tag)      tag="${2:?--tag に値が必要}"; shift 2 ;;
+      *) echo "不明な引数: $1" >&2; return 1 ;;
+    esac
+  done
+  local app; app="$(resolve_app "$appq")" || return 1
+  local wfid=""
+  [ -n "$wf" ] && { wfid="$(resolve_workflow "$app" "$wf")" || return 1; }
+
+  local url="/builds?appId=$app" bid="" f
+  while [ -n "$url" ] && [ "$url" != "null" ]; do
+    f="$(v1_fetch "$url")" || return 1
+    bid="$(jq -r --arg wfid "$wfid" --arg tag "$tag" '
+      [ .builds[]
+        | select($wfid == "" or .workflowId == $wfid)
+        | select($tag == "" or .tag == $tag) ][0]._id // empty' "$f")"
+    [ -n "$bid" ] && break
+    url="$(jq -r '.nextPageUrl // empty' "$f")"
+    [ -z "$url" ] && break
+  done
+  if [ -z "$bid" ]; then
+    echo "条件に合うビルドが見つかりません (app=$appq workflow=${wf:-*} tag=${tag:-*})" >&2
+    return 1
+  fi
+  local d; d="$(cm_api "$V3/builds/$bid")" || return 1
+  normalize_detail "$d"
+}
+
+cmd_build() {
+  [ $# -ge 1 ] || { echo "usage: cmapi build <build_id>" >&2; return 1; }
+  local f; f="$(cm_api "$V3/builds/$1")" || return 1
+  normalize_detail "$f"
+}
+
+cmd_actions() {
+  [ $# -ge 1 ] || { echo "usage: cmapi actions <build_id>" >&2; return 1; }
+  local id="$1" page=1 total=1 f acc="$TMPDIR_CM/actions.jsonl"
+  : > "$acc"
+  while :; do
+    f="$(cm_api "$V3/builds/$id/actions?page=$page")" || return 1
+    total="$(jq -r '.total_pages // 1' "$f")"
+    jq -c '.data[]? | {name, status}' "$f" >> "$acc"
+    page=$((page + 1)); [ "$page" -gt "$total" ] && break
+  done
+  jq -s '.' "$acc"
+}
+
+cmd_artifacts() {
+  [ $# -ge 1 ] || { echo "usage: cmapi artifacts <build_id> [--type <t>] [--url]" >&2; return 1; }
+  local id="$1"; shift
+  local type="" urlmode=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --type) type="${2:?--type に値が必要}"; shift 2 ;;
+      --url)  urlmode=1; shift ;;
+      *) echo "不明な引数: $1" >&2; return 1 ;;
+    esac
+  done
+  local f; f="$(cm_api "$V3/builds/$id")" || return 1
+  if [ "$urlmode" = 1 ]; then
+    jq -r --arg t "$type" '.data.artifacts[]? | select($t == "" or .type == $t) | .short_lived_download_url' "$f"
+  else
+    jq --arg t "$type" '[ .data.artifacts[]? | select($t == "" or .type == $t) | {name, type, size_in_bytes} ]' "$f"
+  fi
+}
+
+cmd_wait() {
+  local id="" appq="" wf="" interval=30 max=45
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --interval) interval="${2:?--interval に値が必要}"; shift 2 ;;
+      --max)      max="${2:?--max に値が必要}"; shift 2 ;;
+      --app)      appq="${2:?--app に値が必要}"; shift 2 ;;
+      --workflow) wf="${2:?--workflow に値が必要}"; shift 2 ;;
+      -*) echo "不明な引数: $1" >&2; return 1 ;;
+      *)  id="$1"; shift ;;
+    esac
+  done
+
+  if [ -z "$id" ]; then
+    if [ -n "$appq" ]; then
+      local app wfid="" f
+      app="$(resolve_app "$appq")" || return 1
+      [ -n "$wf" ] && { wfid="$(resolve_workflow "$app" "$wf")" || return 1; }
+      f="$(v1_fetch "/builds?appId=$app")" || return 1
+      id="$(jq -r --arg wfid "$wfid" '[ .builds[] | select($wfid == "" or .workflowId == $wfid) ][0]._id // empty' "$f")"
+      [ -z "$id" ] && { echo "監視対象のビルドが見つかりません (app=$appq workflow=${wf:-*})" >&2; return 1; }
+      echo "監視対象ビルド: $id" >&2
+    else
+      echo "wait: build_id か --app <app> [--workflow <w>] を指定してください" >&2
+      return 1
+    fi
+  fi
+
+  local t=0 f s
+  while :; do
+    f="$(cm_api "$V3/builds/$id")" || return 1
+    s="$(jq -r '.data.status' "$f")"
+    printf '[%d:%02d] status=%s\n' $((t / 60)) $((t % 60)) "$s" >&2
+    case "$s" in
+      finished|failed|canceled|timeout|skipped)
+        normalize_detail "$f"
+        [ "$s" = "finished" ] && return 0 || return 1
+        ;;
+    esac
+    if [ "$t" -ge $((max * 60)) ]; then
+      echo "監視タイムアウト: ${max}分以内に終端へ到達しませんでした (status=$s)" >&2
+      return 2
+    fi
+    sleep "$interval"; t=$((t + interval))
+  done
+}
+
+# ============================ ディスパッチ ============================
+sub="$1"; shift
+case "$sub" in
+  apps)      cmd_apps "$@" ;;
+  workflows) cmd_workflows "$@" ;;
+  builds)    cmd_builds "$@" ;;
+  latest)    cmd_latest "$@" ;;
+  build)     cmd_build "$@" ;;
+  actions)   cmd_actions "$@" ;;
+  artifacts) cmd_artifacts "$@" ;;
+  wait)      cmd_wait "$@" ;;
+  *) echo "不明なサブコマンド: $sub" >&2; print_help >&2; exit 1 ;;
+esac
